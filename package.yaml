@@ -2,9 +2,9 @@ name:                fgs-swepub
 version:             0.1.0.0
 github:              "githubuser/fgs-swepub"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2021 Author name here"
+author:              "Karl Pettersson"
+maintainer:          "karl.pettersson@slu.se"
+copyright:           "2021 SLU"
 
 extra-source-files:
 - README.md
@@ -26,7 +26,7 @@ library:
   source-dirs: src
 
 executables:
-  fgs-swepub-exe:
+  fgs-swepub:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
@@ -35,6 +35,8 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - fgs-swepub
+    - aeson
+    - bytestring
 
 tests:
   fgs-swepub-test:
