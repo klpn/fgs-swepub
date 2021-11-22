@@ -4,8 +4,32 @@ module Main where
 
 import           Data.Aeson
 import           GHC.Generics
+import           System.Environment
 import           System.IO (hPutStrLn, stderr)
 import qualified Data.ByteString.Lazy as L
+
+data CfResPubl = CfResPubl {
+        cfResPublId :: String
+}
+        deriving (Show)
+
+data CfResPublTitle = CfResPublTitle {
+        cfResPublId :: String
+        , cfLangCode :: String
+        , cfTrans :: String
+        , cfTitle :: String
+}
+        deriving (Show)
+
+data CfPers = CfPers {
+        cfPersId :: String
+}
+        deriving (Show)
+
+data CfOrgUnit = CfOrgUnit {
+        cfOrgUnitId :: String
+}
+        deriving (Show)
 
 data SwepubRecord = SwepubRecord {
         swepubId :: String
@@ -18,7 +42,7 @@ data SwepubRecord = SwepubRecord {
 data SwepubInstance = SwepubInstance {
         contribution :: [Contribution]
         , title :: [Title]
-        , language :: [Language]
+        , instlanguage :: [Language]
         , summary :: [Summary]
         , subject :: [Subject]
 }
@@ -58,9 +82,9 @@ data Publication = Publication {
         deriving (Show, Generic)
 
 data Language = Language {
-        code :: String
+        langcode :: String
 }
-        deriving (Show, Generic)
+        deriving (Show)
 
 data Summary = Summary {
         label :: String
@@ -68,9 +92,9 @@ data Summary = Summary {
         deriving (Show, Generic)
 
 data Subject = Subject {
-        code :: String
+       subjcode :: String
         , prefLabel :: String
-        , language :: Language
+        , subjlanguage :: Language
 }
         deriving (Show, Generic)
 
@@ -92,7 +116,7 @@ instance FromJSON SwepubInstance where
         parseJSON = withObject "swepubinstance" $ \o -> do
                 contribution <- o .: "contribution"
                 title <- o .: "hasTitle"
-                language <- o .: "language"
+                instlanguage <- o .: "language"
                 summary <- o .: "summary"
                 subject <- o .: "subject"
                 return SwepubInstance{..}
@@ -110,15 +134,25 @@ instance FromJSON Contribution where
                 affiliation <- o .:? "hasAffiliation"
                 return Contribution{..}
 
+instance FromJSON Language where
+        parseJSON = withObject "language" $ \o -> do
+                langcode <- o .: "code"
+                return Language{..}
+
+instance FromJSON Subject where
+        parseJSON = withObject "subject" $ \o -> do
+                subjcode <- o .: "code"
+                prefLabel <- o .: "prefLabel"
+                subjlanguage <- o .: "language"
+                return Subject{..}
+
 instance FromJSON Agent where
         parseJSON = genericParseJSON swepubOptions
 
 instance FromJSON Title
 instance FromJSON Source
 instance FromJSON Publication
-instance FromJSON Language
 instance FromJSON Summary
-instance FromJSON Subject
 
 instance FromJSON Affiliation where
         parseJSON = withObject "affiliation" $ \o -> do
@@ -128,13 +162,35 @@ instance FromJSON Affiliation where
 
 swepubOptions = defaultOptions {sumEncoding = defaultTaggedObject{tagFieldName="@type"}}
 
-main :: IO ()
-main = do
+toCfResPubl :: SwepubRecord -> (CfResPubl, [CfResPublTitle])
+toCfResPubl sr = (CfResPubl {cfResPublId = (swepubId sr)}, titles sr)
+
+titles :: SwepubRecord -> [CfResPublTitle]
+titles sr = map (\t -> toCfResPublTitle sr t) (title $ instanceOf sr)
+
+toCfResPublTitle :: SwepubRecord -> Title -> CfResPublTitle
+toCfResPublTitle sr t =
+        CfResPublTitle {cfResPublId = (swepubId sr), cfLangCode = l, cfTrans = "o", cfTitle = mt}
+                where
+                        l = langcode $ instlanguage (instanceOf sr) !! 0
+                        mt = mainTitle t
+
+parse :: [String] -> IO ()
+parse ["-s"] = biblput False
+parse _ = biblput True
+
+biblput :: Bool -> IO ()
+biblput c = do
         biblin <- L.getContents
         let biblo = eitherDecode biblin :: Either String SwepubRecord
         case biblo of
                 Left err -> do
                         hPutStrLn stderr err
-                Right biblrec -> do
-                        putStrLn (show biblrec)
+                Right biblrec ->
+                        if c then do
+                                putStrLn (show $ toCfResPubl biblrec)
+                        else do
+                                putStrLn (show biblrec)
 
+main :: IO ()
+main = getArgs >>= parse 
