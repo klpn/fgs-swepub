@@ -77,6 +77,16 @@ data CfPersName_Pers = CfPersName_Pers {
 }
         deriving (Show)
 
+data CfPers_ResPubl = CfPers_ResPubl {
+        cfPersId :: String
+        , cfResPublId :: String
+        , cfClassId :: String
+        , cfClassSchemeId :: String
+        , cfStartDate :: String
+        , cfEndDate :: String
+}
+        deriving (Show)
+
 data CfOrgUnit = CfOrgUnit {
         cfOrgUnitId :: String
 }
@@ -119,6 +129,7 @@ data Identifier = Identifier {
 data Contribution = Contribution {
         agent :: Agent 
         , affiliation :: Maybe [Affiliation]
+        , role :: [Role]
 }
         deriving (Show)
 
@@ -144,6 +155,11 @@ data Publication = Publication {
 
 data Language = Language {
         langcode :: String
+}
+        deriving (Show)
+
+data Role = Role {
+        roleid :: String
 }
         deriving (Show)
 
@@ -195,12 +211,18 @@ instance FromJSON Contribution where
         parseJSON = withObject "contribution" $ \o -> do
                 agent <- o .: "agent"
                 affiliation <- o .:? "hasAffiliation"
+                role <- o .: "role"
                 return Contribution{..}
 
 instance FromJSON Language where
         parseJSON = withObject "language" $ \o -> do
                 langcode <- o .: "code"
                 return Language{..}
+
+instance FromJSON Role where
+        parseJSON = withObject "role" $ \o -> do
+                roleid <- o .: "@id"
+                return Role{..}
 
 instance FromJSON Subject where
         parseJSON = withObject "subject" $ \o -> do
@@ -314,6 +336,16 @@ toCfPersName_Pers a = CfPersName_Pers {
         cfPersId = (identifierValue $ (identifiedBy a) !! 0)
         , cfPersNameId = (identifierValue $ (identifiedBy a) !! 0) ++ "-N"
         , cfClassId = "SwepubName"
+        , cfClassSchemeId = "FGS_Swepub"
+        , cfStartDate = "1900-01-01T00:00:00"
+        , cfEndDate = "2099-12-31T00:00:00"
+}
+
+toCfPers_ResPubl :: SwepubRecord -> Agent -> Role -> CfPers_ResPubl
+toCfPers_ResPubl sr a r = CfPers_ResPubl {
+        cfPersId = (identifierValue $ (identifiedBy a) !! 0)
+        , cfResPublId = swepubId sr
+        , cfClassId = roleid r
         , cfClassSchemeId = "FGS_Swepub"
         , cfStartDate = "1900-01-01T00:00:00"
         , cfEndDate = "2099-12-31T00:00:00"
