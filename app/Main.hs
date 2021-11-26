@@ -21,6 +21,7 @@ data CerifRecord = CerifRecord {
         , pers :: [CfPers]
         , persName :: [CfPersName]
         , persName_Pers :: [CfPersName_Pers]
+        , persResPubl :: [CfPers_ResPubl]
         , orgUnit :: [CfOrgUnit]
         , orgUnitName :: [CfOrgUnitName]
 }
@@ -258,6 +259,7 @@ toCfResPubl sr = CerifRecord {
         , pers = persons sr
         , persName = persnames sr
         , persName_Pers = persnames_pers sr
+        , persResPubl = pers_respubl sr
         , orgUnit = ous sr
         , orgUnitName = ounames sr
 }
@@ -285,6 +287,18 @@ persnames_pers :: SwepubRecord -> [CfPersName_Pers]
 persnames_pers sr = map toCfPersName_Pers [a | a@(Person {}) <- agents]
         where
                 agents = map agent (contribution $ instanceOf sr)
+
+pers_respubl :: SwepubRecord -> [CfPers_ResPubl]
+pers_respubl sr = concat $ map (\c -> pers_respublContr sr c) [c | c <- contrs, isPerson (agent c)]
+        where
+                contrs = contribution $ instanceOf sr
+
+isPerson :: Agent -> Bool
+isPerson Person {} = True
+isPerson Organization {} = False
+
+pers_respublContr :: SwepubRecord -> Contribution -> [CfPers_ResPubl]
+pers_respublContr sr c = map (\r -> toCfPers_ResPubl sr (agent c) r) (role c)
 
 ous :: SwepubRecord -> [CfOrgUnit]
 ous sr = nub $ map toCfOrgUnit (concat (map (fromMaybe []) affs))
