@@ -1,193 +1,28 @@
-{-# LANGUAGE OverloadedStrings, DuplicateRecordFields, DeriveGeneric, RecordWildCards #-}
+{-# LANGUAGE OverloadedLabels, OverloadedStrings, QuasiQuotes, DuplicateRecordFields, DeriveGeneric, RecordWildCards #-}
 
 module Main where
 
+import           Cerif
+import           CerifXML
+import           Control.Lens
 import           Data.Aeson
+import           Data.Generics.Labels
 import           Data.List
 import           Data.Maybe
 import           GHC.Generics
+import           Swepub
 import           System.Environment
 import           System.Exit
 import           System.IO (hPutStrLn, stderr)
+import           Text.XML
 import qualified Data.ByteString.Lazy as L
-
--- CERIF entities
-
-data CerifRecord = CerifRecord {
-        resPubl :: CfResPubl
-        , resPublTitle :: [CfResPublTitle]
-        , resPublAbstr :: [CfResPublAbstr]
-        , resPublKeyw :: [CfResPublKeyw]
-        , pers :: [CfPers]
-        , persName :: [CfPersName]
-        , persName_Pers :: [CfPersName_Pers]
-        , persResPubl :: [CfPers_ResPubl]
-        , orgUnit :: [CfOrgUnit]
-        , orgUnitName :: [CfOrgUnitName]
-}
-        deriving (Show)
-
-data CfResPubl = CfResPubl {
-        cfResPublId :: String
-}
-        deriving (Show)
-
-data CfResPublTitle = CfResPublTitle {
-        cfResPublId :: String
-        , cfLangCode :: String
-        , cfTrans :: String
-        , cfTitle :: String
-}
-        deriving (Show)
-
-data CfResPublAbstr = CfResPublAbstr {
-        cfResPublId :: String
-        , cfLangCode :: String
-        , cfTrans :: String
-        , cfAbstr :: String
-}
-        deriving (Show)
-
-data CfResPublKeyw = CfResPublKeyw {
-        cfResPublId :: String
-        , cfLangCode :: String
-        , cfTrans :: String
-        , cfKeyw :: String
-}
-        deriving (Show)
-
-data CfPers = CfPers {
-        cfPersId :: String
-}
-        deriving (Show)
-
-data CfPersName = CfPersName {
-        cfPersNameId :: String
-        , cfFamilyNames :: String
-        , cfFirstNames :: String
-}
-        deriving (Show)
-
-data CfPersName_Pers = CfPersName_Pers {
-        cfPersId :: String
-        , cfPersNameId :: String
-        , cfClassId :: String
-        , cfClassSchemeId :: String
-        , cfStartDate :: String
-        , cfEndDate :: String
-}
-        deriving (Show)
-
-data CfPers_ResPubl = CfPers_ResPubl {
-        cfPersId :: String
-        , cfResPublId :: String
-        , cfClassId :: String
-        , cfClassSchemeId :: String
-        , cfStartDate :: String
-        , cfEndDate :: String
-}
-        deriving (Show)
-
-data CfOrgUnit = CfOrgUnit {
-        cfOrgUnitId :: String
-}
-        deriving (Eq, Show)
-
-data CfOrgUnitName = CfOrgUnitName {
-        cfOrgUnitId :: String
-        , cfLangCode :: String
-        , cfTrans :: String
-        , cfName :: String
-}
-        deriving (Eq, Show)
-
--- Swepub BIBFRAME entities
- 
-data SwepubRecord = SwepubRecord {
-        swepubId :: String
-        , sridentifiedBy :: [Identifier]
-        , instanceOf :: SwepubInstance
-        , publication :: [Publication]
-}
-        deriving (Show)
-
-data SwepubInstance = SwepubInstance {
-        contribution :: [Contribution]
-        , title :: [Title]
-        , instlanguage :: [Language]
-        , summary :: [Summary]
-        , subject :: [Subject]
-}
-        deriving (Show)
-
-data Identifier = Identifier {
-        identifierType :: String
-        , identifierValue :: String
-        , identifierSource :: Maybe Source
-}
-        deriving (Show)
-
-data Contribution = Contribution {
-        agent :: Agent 
-        , affiliation :: Maybe [Affiliation]
-        , role :: [Role]
-}
-        deriving (Show)
-
-data Agent = 
-        Person {familyName :: String, givenName :: String, identifiedBy :: [Identifier]}
-        | Organization {name :: String, identifiedBy :: [Identifier]}
-        deriving (Show, Generic)
-
-data Title = Title {
-        mainTitle :: String
-}
-        deriving (Show, Generic)
-
-data Source = Source {
-        code :: String
-}
-        deriving (Show, Generic)
-
-data Publication = Publication {
-        date :: String
-}
-        deriving (Show, Generic)
-
-data Language = Language {
-        langcode :: String
-}
-        deriving (Show)
-
-data Role = Role {
-        roleid :: String
-}
-        deriving (Show)
-
-data Summary = Summary {
-        label :: String
-}
-        deriving (Show, Generic)
-
-data Subject = Subject {
-       subjcode :: String
-        , prefLabel :: String
-        , subjlanguage :: Language
-}
-        deriving (Show, Generic)
-
-data Affiliation = Affiliation {
-        affname :: String
-        , afflanguage :: Language
-        , affidentifiedBy :: [Identifier] 
-        , affaffiliation :: Maybe [Affiliation]
-}
-        deriving (Show)
+import qualified Data.Text as T
+import qualified Data.Text.Lazy.IO as TIO
 
 instance FromJSON SwepubRecord where
         parseJSON = withObject "swepubrecord" $ \o -> do
                 swepubId <- o .: "@id"
-                sridentifiedBy <- o .: "identifiedBy"
+                identifiedBy <- o .: "identifiedBy"
                 instanceOf <- o .: "instanceOf"
                 publication <- o .: "publication"
                 return SwepubRecord{..}
@@ -196,7 +31,7 @@ instance FromJSON SwepubInstance where
         parseJSON = withObject "swepubinstance" $ \o -> do
                 contribution <- o .: "contribution"
                 title <- o .: "hasTitle"
-                instlanguage <- o .: "language"
+                language <- o .: "language"
                 summary <- o .: "summary"
                 subject <- o .: "subject"
                 return SwepubInstance{..}
@@ -217,7 +52,7 @@ instance FromJSON Contribution where
 
 instance FromJSON Language where
         parseJSON = withObject "language" $ \o -> do
-                langcode <- o .: "code"
+                code <- o .: "code"
                 return Language{..}
 
 instance FromJSON Role where
@@ -229,7 +64,7 @@ instance FromJSON Subject where
         parseJSON = withObject "subject" $ \o -> do
                 subjcode <- o .: "code"
                 prefLabel <- o .: "prefLabel"
-                subjlanguage <- o .: "language"
+                language <- o .: "language"
                 return Subject{..}
 
 instance FromJSON Agent where
@@ -242,17 +77,17 @@ instance FromJSON Summary
 
 instance FromJSON Affiliation where
         parseJSON = withObject "affiliation" $ \o -> do
-                affname <- o .: "name"
-                afflanguage <- o .: "language"
-                affidentifiedBy <- o .: "identifiedBy"
-                affaffiliation <- o .:? "hasAffiliation"
+                name <- o .: "name"
+                language <- o .: "language"
+                identifiedBy <- o .: "identifiedBy"
+                affiliation <- o .:? "hasAffiliation"
                 return Affiliation{..}
 
 swepubOptions = defaultOptions {sumEncoding = defaultTaggedObject{tagFieldName="@type"}}
 
 toCfResPubl :: SwepubRecord -> CerifRecord
 toCfResPubl sr = CerifRecord {
-        resPubl = CfResPubl {cfResPublId = (swepubId sr)}
+        resPubl = CfResPubl {cfResPublId = (swepubId sr), cfResPublDate = (dates sr !! 0)}
         , resPublTitle = titles sr
         , resPublAbstr = abstrs sr
         , resPublKeyw = keyws sr
@@ -263,6 +98,9 @@ toCfResPubl sr = CerifRecord {
         , orgUnit = ous sr
         , orgUnitName = ounames sr
 }
+
+dates :: SwepubRecord -> [T.Text]
+dates sr =  map (\p -> T.pack $ T.unpack(date p) ++ "-01-01") (publication sr)
 
 titles :: SwepubRecord -> [CfResPublTitle]
 titles sr = map (\t -> toCfResPublTitle sr t) (title $ instanceOf sr)
@@ -301,54 +139,55 @@ pers_respublContr :: SwepubRecord -> Contribution -> [CfPers_ResPubl]
 pers_respublContr sr c = map (\r -> toCfPers_ResPubl sr (agent c) r) (role c)
 
 ous :: SwepubRecord -> [CfOrgUnit]
-ous sr = nub $ map toCfOrgUnit (concat (map (fromMaybe []) affs))
-        where
-                affs = concat [mainaffs, subaffs]
-                mainaffs = map affiliation (contribution $ instanceOf sr)
-                subaffs = map affaffiliation (concat (map (fromMaybe []) mainaffs))
+ous sr = nub $ map toCfOrgUnit (affils sr)
 
 ounames :: SwepubRecord -> [CfOrgUnitName]
-ounames sr = nub $ map toCfOrgUnitName (concat (map (fromMaybe []) affs))
+ounames sr = nub $ map toCfOrgUnitName (affils sr)
+
+affils :: SwepubRecord -> [Affiliation]
+affils sr = concat (map (fromMaybe []) affs)
         where
                 affs = concat [mainaffs, subaffs]
-                mainaffs = map affiliation (contribution $ instanceOf sr)
-                subaffs = map affaffiliation (concat (map (fromMaybe []) mainaffs))
+                mainaffs = map (\a -> a ^. #affiliation) (contribution $ instanceOf sr)
+                subaffs = map (\a -> a ^. #affiliation) (concat (map (fromMaybe []) mainaffs))
 
 toCfResPublTitle :: SwepubRecord -> Title -> CfResPublTitle
 toCfResPublTitle sr t =
         CfResPublTitle {cfResPublId = (swepubId sr), cfLangCode = l, cfTrans = "o", cfTitle = mt}
                 where
-                        l = langcode $ instlanguage (instanceOf sr) !! 0
+                        l0 = ((instanceOf sr) ^. #language) !! 0
+                        l = l0 ^. #code
                         mt = mainTitle t
 
 toCfResPublAbstr :: SwepubRecord -> Summary -> CfResPublAbstr
 toCfResPublAbstr sr s =
         CfResPublAbstr {cfResPublId = (swepubId sr), cfLangCode = l, cfTrans = "o", cfAbstr = sl}
                 where
-                        l = langcode $ instlanguage (instanceOf sr) !! 0
+                        l0 = ((instanceOf sr) ^. #language) !! 0
+                        l = l0 ^. #code
                         sl = label s
 
 toCfResPublKeyw :: SwepubRecord -> Subject -> CfResPublKeyw
 toCfResPublKeyw sr s =
         CfResPublKeyw {cfResPublId = (swepubId sr), cfLangCode = l, cfTrans = "o", cfKeyw = pl}
                 where
-                        l = langcode $ subjlanguage s
+                        l = s ^. #language . #code
                         pl = prefLabel s
 
 toCfPers :: Agent -> CfPers
-toCfPers a = CfPers {cfPersId = (identifierValue $ (identifiedBy a) !! 0)}
+toCfPers a = CfPers {cfPersId = (identifierValue $ (a ^. #identifiedBy) !! 0)}
 
 toCfPersName :: Agent -> CfPersName
 toCfPersName a = CfPersName {
-        cfPersNameId = (identifierValue $ (identifiedBy a) !! 0) ++ "-N"
+        cfPersNameId = T.pack $ (T.unpack $ identifierValue $ (a ^. #identifiedBy) !! 0) ++ "-N"
         , cfFamilyNames = familyName a
         , cfFirstNames = givenName a
 }
 
 toCfPersName_Pers :: Agent -> CfPersName_Pers
 toCfPersName_Pers a = CfPersName_Pers {
-        cfPersId = (identifierValue $ (identifiedBy a) !! 0)
-        , cfPersNameId = (identifierValue $ (identifiedBy a) !! 0) ++ "-N"
+        cfPersId = (identifierValue $ (a ^. #identifiedBy) !! 0)
+        , cfPersNameId = T.pack $ (T.unpack $ identifierValue $ (a ^. #identifiedBy) !! 0) ++ "-N"
         , cfClassId = "SwepubName"
         , cfClassSchemeId = "FGS_Swepub"
         , cfStartDate = "1900-01-01T00:00:00"
@@ -357,7 +196,7 @@ toCfPersName_Pers a = CfPersName_Pers {
 
 toCfPers_ResPubl :: SwepubRecord -> Agent -> Role -> CfPers_ResPubl
 toCfPers_ResPubl sr a r = CfPers_ResPubl {
-        cfPersId = (identifierValue $ (identifiedBy a) !! 0)
+        cfPersId = (identifierValue $ (a ^. #identifiedBy) !! 0)
         , cfResPublId = swepubId sr
         , cfClassId = roleid r
         , cfClassSchemeId = "FGS_Swepub"
@@ -366,24 +205,25 @@ toCfPers_ResPubl sr a r = CfPers_ResPubl {
 }
 
 toCfOrgUnit :: Affiliation -> CfOrgUnit
-toCfOrgUnit a = CfOrgUnit {cfOrgUnitId = (identifierValue $ (affidentifiedBy a) !! 0)}
+toCfOrgUnit a = CfOrgUnit {cfOrgUnitId = (identifierValue $ (a ^. #identifiedBy) !! 0)}
 
 toCfOrgUnitName :: Affiliation -> CfOrgUnitName
 toCfOrgUnitName a = CfOrgUnitName {
-        cfOrgUnitId = (identifierValue $ (affidentifiedBy a) !! 0)
+        cfOrgUnitId = (identifierValue $ (a ^. #identifiedBy) !! 0)
         , cfLangCode = l
         , cfTrans = "o"
         , cfName = n
 }
         where
-                l = langcode $ afflanguage a
-                n = affname a
+                l = a ^. #language . #code
+                n = a ^. #name
 
 parse :: [String] -> IO ()
-parse ["-s"] = biblput False
-parse _ = biblput True
+parse ["-s"] = biblput "swepub"
+parse ["-x"] = biblput "cerifxml"
+parse _ = biblput "cerif"
 
-biblput :: Bool -> IO ()
+biblput :: String -> IO ()
 biblput c = do
         biblin <- L.getContents
         let biblo = eitherDecode biblin :: Either String SwepubRecord
@@ -392,10 +232,11 @@ biblput c = do
                         hPutStrLn stderr err
                         exitWith (ExitFailure 1)
                 Right biblrec ->
-                        if c then do
-                                putStrLn (show $ toCfResPubl biblrec)
-                        else do
-                                putStrLn (show biblrec)
+                        case c of
+                                "cerif" -> putStrLn (show $ toCfResPubl biblrec)
+                                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (toCfResPubl biblrec)))
+                                "swepub" -> putStrLn (show biblrec)
+                                _ -> putStrLn (show $ toCfResPubl biblrec)
 
 main :: IO ()
 main = getArgs >>= parse 
