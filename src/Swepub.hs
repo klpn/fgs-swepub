@@ -167,7 +167,7 @@ toCfResPubl sr = CerifRecord {
         , pers = persons sr
         , persName = persnames sr
         , persName_Pers = persnames_pers sr
-        , persResPubl = pers_respubl sr
+        , pers_ResPubl = pers_respubl sr
         , orgUnit = ous sr
         , orgUnitName = ounames sr
 }

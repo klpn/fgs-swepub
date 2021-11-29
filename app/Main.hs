@@ -7,7 +7,6 @@ import           CerifXML
 import           Control.Lens
 import           Data.Aeson
 import           Data.Generics.Labels
-import           Data.List
 import           Data.Maybe
 import           GHC.Generics
 import           Swepub

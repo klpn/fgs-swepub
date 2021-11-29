@@ -32,15 +32,33 @@ $forall crab <- crabs
         ^{toCerifXMLResPublAbstr crab}
 $forall crkeyw <- crkeyws
         ^{toCerifXMLResPublKeyw crkeyw}
+$forall crp <- crps
+        ^{toCerifXMLPers crp}
+$forall crpn <- crpns
+        ^{toCerifXMLPersName crpn}
+$forall crpnp <- crpnps
+        ^{toCerifXMLPersName_Pers crpnp}
+$forall crprp <- crprps
+        ^{toCerifXMLPers_ResPubl crprp}
+$forall crou <- crous
+        ^{toCerifXMLOrgUnit crou}
+$forall croun <- crouns
+        ^{toCerifXMLOrgUnitName croun}
 |]
                 publId = cr ^. #resPubl . #cfResPublId
                 publDate = cr ^. #resPubl . #cfResPublDate
                 crts = cr ^. #resPublTitle
                 crabs = cr ^. #resPublAbstr
                 crkeyws = cr ^. #resPublKeyw
+                crps = cr ^. #pers
+                crpns = cr ^. #persName
+                crpnps = cr ^. #persName_Pers
+                crprps = cr ^. #pers_ResPubl
+                crous = cr ^. #orgUnit
+                crouns = cr ^. #orgUnitName
 
 toCerifXMLResPublTitle :: CfResPublTitle -> [Node] 
-toCerifXMLResPublTitle crt =  [xml|
+toCerifXMLResPublTitle crt = [xml|
 <cfResPublTitle>
         <cfResPublId>#{publId}
         <cfTitle cfLangCode=#{langCode} cfTrans=#{trans}>#{title}
@@ -52,7 +70,7 @@ toCerifXMLResPublTitle crt =  [xml|
                 trans = crt ^. #cfTrans
 
 toCerifXMLResPublAbstr :: CfResPublAbstr -> [Node] 
-toCerifXMLResPublAbstr crab =  [xml|
+toCerifXMLResPublAbstr crab = [xml|
 <cfResPublAbstr>
         <cfResPublId>#{publId}
         <cfAbstr cfLangCode=#{langCode} cfTrans=#{trans}>#{title}
@@ -64,7 +82,7 @@ toCerifXMLResPublAbstr crab =  [xml|
                 trans = crab ^. #cfTrans
 
 toCerifXMLResPublKeyw :: CfResPublKeyw -> [Node] 
-toCerifXMLResPublKeyw crkeyw =  [xml|
+toCerifXMLResPublKeyw crkeyw = [xml|
 <cfResPublKeyw>
         <cfResPublId>#{publId}
         <cfKeyw cfLangCode=#{langCode} cfTrans=#{trans}>#{title}
@@ -74,3 +92,79 @@ toCerifXMLResPublKeyw crkeyw =  [xml|
                 title = crkeyw ^. #cfKeyw
                 langCode = crkeyw ^. #cfLangCode
                 trans = crkeyw ^. #cfTrans
+
+toCerifXMLPers :: CfPers -> [Node] 
+toCerifXMLPers crp = [xml|
+<cfPers>
+        <cfPersId>#{persId}
+|]
+        where
+                persId = crp ^. #cfPersId
+
+toCerifXMLPersName :: CfPersName -> [Node] 
+toCerifXMLPersName crpn = [xml|
+<cfPersName>
+        <cfPersNameId>#{persNameId}
+        <cfFamilyNames>#{familyNames}
+        <cfFirstNames>#{firstNames}
+|]
+        where
+                persNameId = crpn ^. #cfPersNameId
+                familyNames = crpn ^. #cfFamilyNames
+                firstNames = crpn ^. #cfFirstNames
+
+toCerifXMLPersName_Pers :: CfPersName_Pers -> [Node] 
+toCerifXMLPersName_Pers crpnp = [xml|
+<cfPersName_Pers>
+        <cfPersNameId>#{persNameId}
+        <cfPersId>#{persId}
+        <cfClassId>#{classId}
+        <cfClassSchemeId>#{classSchemeId}
+        <cfStartDate>#{startDate}
+        <cfEndDate>#{endDate}
+|]
+        where
+                persNameId = crpnp ^. #cfPersNameId
+                persId = crpnp ^. #cfPersId
+                classId = crpnp ^. #cfClassId
+                classSchemeId = crpnp ^. #cfClassSchemeId
+                startDate = crpnp ^. #cfStartDate
+                endDate = crpnp ^. #cfEndDate
+
+toCerifXMLPers_ResPubl :: CfPers_ResPubl -> [Node] 
+toCerifXMLPers_ResPubl crprp = [xml|
+<cfPers_ResPubl>
+        <cfPersId>#{persId}
+        <cfResPublId>#{resPublId}
+        <cfClassId>#{classId}
+        <cfClassSchemeId>#{classSchemeId}
+        <cfStartDate>#{startDate}
+        <cfEndDate>#{endDate}
+|]
+        where
+                persId = crprp ^. #cfPersId
+                resPublId = crprp ^. #cfResPublId
+                classId = crprp ^. #cfClassId
+                classSchemeId = crprp ^. #cfClassSchemeId
+                startDate = crprp ^. #cfStartDate
+                endDate = crprp ^. #cfEndDate
+
+toCerifXMLOrgUnit :: CfOrgUnit -> [Node] 
+toCerifXMLOrgUnit crou = [xml|
+<cfOrgUnit>
+        <cfOrgUnitId>#{orgUnitId}
+|]
+        where
+                orgUnitId = crou ^. #cfOrgUnitId
+
+toCerifXMLOrgUnitName :: CfOrgUnitName -> [Node] 
+toCerifXMLOrgUnitName oun = [xml|
+<cfOrgUnitName>
+        <cfOrgUnitId>#{orgUnitId}
+        <cfName cfLangCode=#{langCode} cfTrans=#{trans}>#{name}
+|]
+        where
+                orgUnitId = oun ^. #cfOrgUnitId
+                name = oun ^. #cfName
+                langCode = oun ^. #cfLangCode
+                trans = oun ^. #cfTrans

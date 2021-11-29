@@ -15,7 +15,7 @@ data CerifRecord = CerifRecord {
         , pers :: [CfPers]
         , persName :: [CfPersName]
         , persName_Pers :: [CfPersName_Pers]
-        , persResPubl :: [CfPers_ResPubl]
+        , pers_ResPubl :: [CfPers_ResPubl]
         , orgUnit :: [CfOrgUnit]
         , orgUnitName :: [CfOrgUnitName]
 }
@@ -54,24 +54,24 @@ data CfResPublKeyw = CfResPublKeyw {
 data CfPers = CfPers {
         cfPersId :: T.Text
 }
-        deriving (Show)
+        deriving (Show, Generic)
 
 data CfPersName = CfPersName {
         cfPersNameId :: T.Text
         , cfFamilyNames :: T.Text
         , cfFirstNames :: T.Text
 }
-        deriving (Show)
+        deriving (Show, Generic)
 
 data CfPersName_Pers = CfPersName_Pers {
-        cfPersId :: T.Text
-        , cfPersNameId :: T.Text
+        cfPersNameId :: T.Text
+        , cfPersId :: T.Text
         , cfClassId :: T.Text
         , cfClassSchemeId :: T.Text
         , cfStartDate :: T.Text
         , cfEndDate :: T.Text
 }
-        deriving (Show)
+        deriving (Show, Generic)
 
 data CfPers_ResPubl = CfPers_ResPubl {
         cfPersId :: T.Text
@@ -81,12 +81,12 @@ data CfPers_ResPubl = CfPers_ResPubl {
         , cfStartDate :: T.Text
         , cfEndDate :: T.Text
 }
-        deriving (Show)
+        deriving (Show, Generic)
 
 data CfOrgUnit = CfOrgUnit {
         cfOrgUnitId :: T.Text
 }
-        deriving (Eq, Show)
+        deriving (Eq, Show, Generic)
 
 data CfOrgUnitName = CfOrgUnitName {
         cfOrgUnitId :: T.Text
@@ -94,4 +94,4 @@ data CfOrgUnitName = CfOrgUnitName {
         , cfTrans :: T.Text
         , cfName :: T.Text
 }
-        deriving (Eq, Show)
+        deriving (Eq, Show, Generic)
