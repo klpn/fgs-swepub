@@ -46,7 +46,7 @@ $forall crou <- crous
 $forall croun <- crouns
         ^{toCerifXMLOrgUnitName croun}
 |]
-                crpus = nub $ map (\cr -> cr ^. #resPubl) crs
+                crpus = nub $ concat $ map (\cr -> cr ^. #resPubl) crs
                 crts = nub $ concat $ map (\cr -> cr ^. #resPublTitle) crs
                 crabs = nub $ concat $ map (\cr -> cr ^. #resPublAbstr) crs
                 crkeyws = nub $ concat $ map (\cr -> cr ^. #resPublKeyw) crs

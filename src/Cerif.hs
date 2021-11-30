@@ -8,7 +8,7 @@ import           GHC.Generics
 import qualified Data.Text as T
 
 data CerifRecord = CerifRecord {
-        resPubl :: CfResPubl
+        resPubl :: [CfResPubl]
         , resPublTitle :: [CfResPublTitle]
         , resPublAbstr :: [CfResPublAbstr]
         , resPublKeyw :: [CfResPublKeyw]

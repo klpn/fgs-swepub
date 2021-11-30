@@ -6,7 +6,6 @@ import           Cerif
 import           CerifXML
 import           Data.Aeson
 import           Data.Either
-import           GHC.Generics
 import           Swepub
 import           System.Environment
 import           System.IO (hPutStrLn, stderr)

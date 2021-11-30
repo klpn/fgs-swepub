@@ -160,7 +160,7 @@ swepubOptions = defaultOptions {sumEncoding = defaultTaggedObject{tagFieldName="
 
 toCfResPubl :: SwepubRecord -> CerifRecord
 toCfResPubl sr = CerifRecord {
-        resPubl = CfResPubl {cfResPublId = (swepubId sr), cfResPublDate = (dates sr !! 0)}
+        resPubl = [CfResPubl {cfResPublId = (swepubId sr), cfResPublDate = (dates sr !! 0)}]
         , resPublTitle = titles sr
         , resPublAbstr = abstrs sr
         , resPublKeyw = keyws sr
