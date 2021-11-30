@@ -5,6 +5,7 @@ module CerifXML where
 import           Cerif
 import           Control.Lens
 import           Data.Generics.Labels
+import           Data.List
 import           Text.Hamlet.XML
 import           Text.XML
 import           qualified Data.Map.Strict as M
@@ -19,13 +20,13 @@ cerifattrs = M.fromList [
         , ("date", T.pack "2021-11-28")
         , ("sourceDatabase", T.pack "FGS_FM")]
 
-toCerifXML :: CerifRecord -> Document
-toCerifXML cr = Document (Prologue [] Nothing []) cerifroot []
+toCerifXML :: [CerifRecord] -> Document
+toCerifXML crs = Document (Prologue [] Nothing []) cerifroot []
         where
                 cerifroot = Element "CERIF" cerifattrs [xml|
-<cfResPubl>
-        <cfResPublId>#{publId}
-        <cfResPublDate>#{publDate}
+
+$forall crpu <- crpus
+        ^{toCerifXMLResPubl crpu}
 $forall crt <- crts
         ^{toCerifXMLResPublTitle crt}
 $forall crab <- crabs
@@ -45,17 +46,26 @@ $forall crou <- crous
 $forall croun <- crouns
         ^{toCerifXMLOrgUnitName croun}
 |]
-                publId = cr ^. #resPubl . #cfResPublId
-                publDate = cr ^. #resPubl . #cfResPublDate
-                crts = cr ^. #resPublTitle
-                crabs = cr ^. #resPublAbstr
-                crkeyws = cr ^. #resPublKeyw
-                crps = cr ^. #pers
-                crpns = cr ^. #persName
-                crpnps = cr ^. #persName_Pers
-                crprps = cr ^. #pers_ResPubl
-                crous = cr ^. #orgUnit
-                crouns = cr ^. #orgUnitName
+                crpus = nub $ map (\cr -> cr ^. #resPubl) crs
+                crts = nub $ concat $ map (\cr -> cr ^. #resPublTitle) crs
+                crabs = nub $ concat $ map (\cr -> cr ^. #resPublAbstr) crs
+                crkeyws = nub $ concat $ map (\cr -> cr ^. #resPublKeyw) crs
+                crps = nub $ concat $ map (\cr -> cr ^. #pers) crs
+                crpns = nub $ concat $ map (\cr -> cr ^. #persName) crs
+                crpnps = nub $ concat $ map (\cr -> cr ^. #persName_Pers) crs
+                crprps = nub $ concat $ map (\cr -> cr ^. #pers_ResPubl) crs
+                crous = nub $ concat $ map (\cr -> cr ^. #orgUnit) crs
+                crouns = nub $ concat $ map (\cr -> cr ^. #orgUnitName) crs
+
+toCerifXMLResPubl :: CfResPubl -> [Node] 
+toCerifXMLResPubl crpu = [xml|
+<cfResPubl>
+        <cfResPublId>#{publId}
+        <cfResPublDate>#{publDate}
+|]
+        where
+                publId = crpu ^. #cfResPublId
+                publDate = crpu ^. #cfResPublDate
 
 toCerifXMLResPublTitle :: CfResPublTitle -> [Node] 
 toCerifXMLResPublTitle crt = [xml|

@@ -19,13 +19,13 @@ data CerifRecord = CerifRecord {
         , orgUnit :: [CfOrgUnit]
         , orgUnitName :: [CfOrgUnitName]
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfResPubl = CfResPubl {
         cfResPublId :: T.Text
         , cfResPublDate :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfResPublTitle = CfResPublTitle {
         cfResPublId :: T.Text
@@ -33,7 +33,7 @@ data CfResPublTitle = CfResPublTitle {
         , cfTrans :: T.Text
         , cfTitle :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfResPublAbstr = CfResPublAbstr {
         cfResPublId :: T.Text
@@ -41,7 +41,7 @@ data CfResPublAbstr = CfResPublAbstr {
         , cfTrans :: T.Text
         , cfAbstr :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfResPublKeyw = CfResPublKeyw {
         cfResPublId :: T.Text
@@ -49,19 +49,19 @@ data CfResPublKeyw = CfResPublKeyw {
         , cfTrans :: T.Text
         , cfKeyw :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfPers = CfPers {
         cfPersId :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfPersName = CfPersName {
         cfPersNameId :: T.Text
         , cfFamilyNames :: T.Text
         , cfFirstNames :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfPersName_Pers = CfPersName_Pers {
         cfPersNameId :: T.Text
@@ -71,7 +71,7 @@ data CfPersName_Pers = CfPersName_Pers {
         , cfStartDate :: T.Text
         , cfEndDate :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfPers_ResPubl = CfPers_ResPubl {
         cfPersId :: T.Text
@@ -81,7 +81,7 @@ data CfPers_ResPubl = CfPers_ResPubl {
         , cfStartDate :: T.Text
         , cfEndDate :: T.Text
 }
-        deriving (Show, Generic)
+        deriving (Eq, Show, Generic)
 
 data CfOrgUnit = CfOrgUnit {
         cfOrgUnitId :: T.Text

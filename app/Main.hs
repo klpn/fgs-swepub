@@ -4,18 +4,14 @@ module Main where
 
 import           Cerif
 import           CerifXML
-import           Control.Lens
 import           Data.Aeson
-import           Data.Generics.Labels
-import           Data.Maybe
+import           Data.Either
 import           GHC.Generics
 import           Swepub
 import           System.Environment
-import           System.Exit
 import           System.IO (hPutStrLn, stderr)
 import           Text.XML
 import qualified Data.ByteString.Lazy as L
-import qualified Data.Text as T
 import qualified Data.Text.Lazy.IO as TIO
 
 parse :: [String] -> IO ()
@@ -25,18 +21,21 @@ parse _ = biblput "cerif"
 
 biblput :: String -> IO ()
 biblput c = do
-        biblin <- L.getContents
-        let biblo = eitherDecode biblin :: Either String SwepubRecord
-        case biblo of
-                Left err -> do
-                        hPutStrLn stderr err
-                        exitWith (ExitFailure 1)
-                Right biblrec ->
-                        case c of
-                                "cerif" -> putStrLn (show $ toCfResPubl biblrec)
-                                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (toCfResPubl biblrec)))
-                                "swepub" -> putStrLn (show biblrec)
-                                _ -> putStrLn (show $ toCfResPubl biblrec)
+        biblinRaw <- L.getContents
+        let biblin = init $ L.split 10 biblinRaw
+        let biblo = map (\b -> eitherDecode b :: Either String SwepubRecord) biblin
+        let biblerr = lefts biblo
+        let biblrec = rights biblo
+        if (length biblerr) > 0 
+                then do
+                        hPutStrLn stderr $ show biblerr
+                else do
+                        return ()
+        case c of
+                "cerif" -> putStrLn (show $ map toCfResPubl biblrec)
+                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (map toCfResPubl biblrec)))
+                "swepub" -> putStrLn (show biblrec)
+                _ -> putStrLn (show $ map toCfResPubl biblrec)
 
 main :: IO ()
 main = getArgs >>= parse 
