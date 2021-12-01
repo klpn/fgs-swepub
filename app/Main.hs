@@ -7,7 +7,7 @@ import           CerifXML
 import           Data.Aeson
 import           Data.Either
 import           Swepub
-import           System.Console.GetOpt as GO
+import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit
 import           System.IO (hPutStrLn, stderr)
@@ -20,13 +20,13 @@ data Flag = FromFormat String | ToFormat String
 
 usage :: String -> IO ()
 usage err = do
-        hPutStrLn stderr $ GO.usageInfo (err ++ "\nusage: fgs-swepub options") options
+        hPutStrLn stderr $ usageInfo (err ++ "\nusage: fgs-swepub options") options
         exitWith (ExitFailure 1)
 
-options :: [GO.OptDescr Flag]
+options :: [OptDescr Flag]
 options = [
-        GO.Option ['f'] ["from"] (ReqArg FromFormat "INFORMAT") "Input format"
-        , GO.Option ['t'] ["to"] (ReqArg ToFormat "OUTFORMAT") "Output format"]
+        Option ['f'] ["from"] (ReqArg FromFormat "INFORMAT") "Input format"
+        , Option ['t'] ["to"] (ReqArg ToFormat "OUTFORMAT") "Output format"]
 
 biblput :: String -> String -> IO ()
 biblput "swepubjson" t = do
@@ -50,7 +50,7 @@ biblput _ _ = usage "unrecognized format"
 main :: IO ()
 main = do 
         args <- getArgs
-        let (flags, opts, errs) = GO.getOpt GO.Permute options args
+        let (flags, opts, errs) = getOpt Permute options args
         if (length errs) > 0 || (length flags) == 0
                 then do
                         usage (unlines errs)
