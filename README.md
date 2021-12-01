@@ -11,23 +11,23 @@ Note that the transformations are still very incomplete, and a Swepub class
 scheme should be added.
 
 ```
-stack exec fgs-swepub < SwepubBibframe_82412.jsonl
+stack exec fgs-swepub -- -f swepubjson -t cerifnat < SwepubBibframe_82412.jsonl
 ```
 
 To transform the example file to CERIF XML.
 
 ```
-stack exec fgs-swepub -- -x < SwepubBibframe_82412.jsonl
+stack exec fgs-swepub -- -f swepubjson -t cerifxml < SwepubBibframe_82412.jsonl
 ```
 
 Pipe into [xmllint](http://xmlsoft.org/) for indentation.
 
 ```
-stack exec fgs-swepub -- -x < SwepubBibframe_82412.jsonl | xmllint --format -
+stack exec fgs-swepub -- -f swepubjson -t cerifxml < SwepubBibframe_82412.jsonl | xmllint --format -
 ```
 
 To output the example file in Swepub data format.
 
 ```
-stack exec fgs-swepub -- -s < SwepubBibframe_82412.jsonl
+stack exec fgs-swepub -- -f swepubjson -t swepubnat < SwepubBibframe_82412.jsonl
 ```

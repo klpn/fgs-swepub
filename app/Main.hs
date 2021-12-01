@@ -7,19 +7,29 @@ import           CerifXML
 import           Data.Aeson
 import           Data.Either
 import           Swepub
+import           System.Console.GetOpt as GO
 import           System.Environment
+import           System.Exit
 import           System.IO (hPutStrLn, stderr)
 import           Text.XML
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Text.Lazy.IO as TIO
 
-parse :: [String] -> IO ()
-parse ["-s"] = biblput "swepub"
-parse ["-x"] = biblput "cerifxml"
-parse _ = biblput "cerif"
+data Flag = FromFormat String | ToFormat String
+        deriving Show
 
-biblput :: String -> IO ()
-biblput c = do
+usage :: String -> IO ()
+usage err = do
+        hPutStrLn stderr $ GO.usageInfo (err ++ "\nusage: fgs-swepub options") options
+        exitWith (ExitFailure 1)
+
+options :: [GO.OptDescr Flag]
+options = [
+        GO.Option ['f'] ["from"] (ReqArg FromFormat "INFORMAT") "Input format"
+        , GO.Option ['t'] ["to"] (ReqArg ToFormat "OUTFORMAT") "Output format"]
+
+biblput :: String -> String -> IO ()
+biblput "swepubjson" t = do
         biblinRaw <- L.getContents
         let biblin = init $ L.split 10 biblinRaw
         let biblo = map (\b -> eitherDecode b :: Either String SwepubRecord) biblin
@@ -30,11 +40,21 @@ biblput c = do
                         hPutStrLn stderr $ show biblerr
                 else do
                         return ()
-        case c of
-                "cerif" -> putStrLn (show $ map toCfResPubl biblrec)
+        case t of
+                "cerifnat" -> putStrLn (show $ map toCfResPubl biblrec)
                 "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (map toCfResPubl biblrec)))
-                "swepub" -> putStrLn (show biblrec)
-                _ -> putStrLn (show $ map toCfResPubl biblrec)
+                "swepubnat" -> putStrLn (show biblrec)
+                _ -> usage "unrecognized format"
+biblput _ _ = usage "unrecognized format"
 
 main :: IO ()
-main = getArgs >>= parse 
+main = do 
+        args <- getArgs
+        let (flags, opts, errs) = GO.getOpt GO.Permute options args
+        if (length errs) > 0 || (length flags) == 0
+                then do
+                        usage (unlines errs)
+                else do
+                        let fromf = last [f | FromFormat f <- flags]
+                        let tof = last [t | ToFormat t <- flags]
+                        biblput fromf tof
