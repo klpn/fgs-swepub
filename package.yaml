@@ -22,12 +22,14 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 - aeson
+- conduit
 - containers
 - generic-lens
 - lens
 - text
 - xml-conduit
 - xml-hamlet
+- xml-types
 
 library:
   source-dirs: src

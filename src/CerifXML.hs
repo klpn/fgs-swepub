@@ -3,13 +3,16 @@
 module CerifXML where
 
 import           Cerif
+import           Conduit
 import           Control.Lens
 import           Data.Generics.Labels
 import           Data.List
 import           Text.Hamlet.XML
 import           Text.XML
+import           Text.XML.Stream.Parse
 import           qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import qualified Data.XML.Types as X
 
 cerifattrs :: M.Map Name T.Text
 cerifattrs = M.fromList [
@@ -178,3 +181,13 @@ toCerifXMLOrgUnitName oun = [xml|
                 name = oun ^. #cfName
                 langCode = oun ^. #cfLangCode
                 trans = oun ^. #cfTrans
+
+
+parseCfResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl)
+parseCfResPubl = tagNoAttr "cfResPubl" $ do
+        publId <- force "publId missing" $ tagNoAttr "cfResPublId" content
+        publDate <- force "publDate missing" $ tagNoAttr "cfResPublDate" content
+        return $ CfResPubl {cfResPublId = publId, cfResPublDate = publDate}
+
+parseCfResPubls :: MonadThrow m => ConduitT X.Event o m (Maybe [CfResPubl])
+parseCfResPubls = tagNoAttr "CERIF" $ many parseCfResPubl

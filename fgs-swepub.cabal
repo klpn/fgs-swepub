@@ -35,12 +35,14 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , conduit
     , containers
     , generic-lens
     , lens
     , text
     , xml-conduit
     , xml-hamlet
+    , xml-types
   default-language: Haskell2010
 
 executable fgs-swepub
@@ -54,6 +56,7 @@ executable fgs-swepub
       aeson
     , base >=4.7 && <5
     , bytestring
+    , conduit
     , containers
     , fgs-swepub
     , generic-lens
@@ -61,6 +64,7 @@ executable fgs-swepub
     , text
     , xml-conduit
     , xml-hamlet
+    , xml-types
   default-language: Haskell2010
 
 test-suite fgs-swepub-test
@@ -74,6 +78,7 @@ test-suite fgs-swepub-test
   build-depends:
       aeson
     , base >=4.7 && <5
+    , conduit
     , containers
     , fgs-swepub
     , generic-lens
@@ -81,4 +86,5 @@ test-suite fgs-swepub-test
     , text
     , xml-conduit
     , xml-hamlet
+    , xml-types
   default-language: Haskell2010
