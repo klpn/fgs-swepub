@@ -4,6 +4,7 @@ module Main where
 
 import           Cerif
 import           CerifXML
+import           Conduit
 import           Data.Aeson
 import           Data.Either
 import           Swepub
@@ -14,6 +15,7 @@ import           System.IO (hPutStrLn, stderr)
 import           Text.XML
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Text.Lazy.IO as TIO
+import qualified Text.XML.Stream.Parse as XP
 
 data Flag = FromFormat String | ToFormat String
         deriving Show
@@ -44,6 +46,12 @@ biblput "swepubjson" t = do
                 "cerifnat" -> putStrLn (show $ map toCfResPubl biblrec)
                 "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (map toCfResPubl biblrec)))
                 "swepubnat" -> putStrLn (show biblrec)
+                _ -> usage "unrecognized format"
+biblput "cerifxml" t = do
+        cerifinRaw <- L.getContents
+        cerif <- runConduitRes $ XP.parseLBS XP.def cerifinRaw .| XP.force "CERIF missing" parseCerifRecord
+        case t of
+                "cerifnat" -> putStrLn $ show cerif
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
 

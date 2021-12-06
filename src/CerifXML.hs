@@ -4,7 +4,7 @@ module CerifXML where
 
 import           Cerif
 import           Conduit
-import           Control.Lens
+import           Control.Lens hiding (matching)
 import           Data.Generics.Labels
 import           Data.List
 import           Text.Hamlet.XML
@@ -14,9 +14,18 @@ import           qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.XML.Types as X
 
+cerifns :: T.Text
+cerifns = "urn:xmlns:org:eurocris:cerif-1.6-2"
+
+cerifnsName :: String -> Name
+cerifnsName s = Name (T.pack s) (Just cerifns) Nothing
+
+matchCNN :: String -> NameMatcher Name
+matchCNN = matching . (==) . cerifnsName
+
 cerifattrs :: M.Map Name T.Text
 cerifattrs = M.fromList [
-        ("xmlns", T.pack "urn:xmlns:org:eurocris:cerif-1.6-2")
+        ("xmlns", cerifns)
         , ("xsi:schemaLocation", T.pack $ "urn:xmlns:org:eurocris:cerif-1.6-2 " ++
                 "https://www.eurocris.org/Uploads/Web%20pages/CERIF-1.6/CERIF_1.6_2.xsd")
         , ("xmlns:xsi", T.pack "http://www.w3.org/2001/XMLSchema-instance")
@@ -27,7 +36,6 @@ toCerifXML :: [CerifRecord] -> Document
 toCerifXML crs = Document (Prologue [] Nothing []) cerifroot []
         where
                 cerifroot = Element "CERIF" cerifattrs [xml|
-
 $forall crpu <- crpus
         ^{toCerifXMLResPubl crpu}
 $forall crt <- crts
@@ -183,11 +191,28 @@ toCerifXMLOrgUnitName oun = [xml|
                 trans = oun ^. #cfTrans
 
 
-parseCfResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl)
-parseCfResPubl = tagNoAttr "cfResPubl" $ do
-        publId <- force "publId missing" $ tagNoAttr "cfResPublId" content
-        publDate <- force "publDate missing" $ tagNoAttr "cfResPublDate" content
-        return $ CfResPubl {cfResPublId = publId, cfResPublDate = publDate}
+parseCerifRecord :: MonadThrow m => ConduitT X.Event o m (Maybe CerifRecord)
+parseCerifRecord = tagIgnoreAttrs (matchCNN "CERIF") $ do
+        resPubl <- many parseCfResPubl
+        return
+                $ CerifRecord
+                        resPubl
+                        []
+                        []
+                        []
+                        []
+                        []
+                        []
+                        []
+                        []
+                        []
 
-parseCfResPubls :: MonadThrow m => ConduitT X.Event o m (Maybe [CfResPubl])
-parseCfResPubls = tagNoAttr "CERIF" $ many parseCfResPubl
+
+parseCfResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl)
+parseCfResPubl = tagNoAttr (matchCNN "cfResPubl") $ do
+        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
+        publDate <- force "publDate missing" $ tagNoAttr (matchCNN "cfResPublDate") content
+        return
+                $ CfResPubl
+                        publId
+                        publDate
