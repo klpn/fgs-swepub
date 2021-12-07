@@ -4,7 +4,8 @@ This program transforms Swepub
 [BIBFRAME JSON Lines](https://www.kb.se/samverkan-och-utveckling/swepub/datamodell/swepub-bibframe.html) to
 [CERIF](https://github.com/EuroCRIS/CERIF-DataModel). It can be built and run
 using the [Haskell Tool Stack](https://docs.haskellstack.org/en/stable/README/).
-After setting up Stack and cloing the repository, run `stack build`.
+After setting up Stack and cloning the repository (or after pulling or making 
+changes to the code), run `stack build`.
 
 To transform the example file to CERIF with native Haskell representation.
 Note that the transformations are still very incomplete, and a Swepub class
