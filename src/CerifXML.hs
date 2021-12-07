@@ -194,19 +194,27 @@ toCerifXMLOrgUnitName oun = [xml|
 parseCerifRecord :: MonadThrow m => ConduitT X.Event o m (Maybe CerifRecord)
 parseCerifRecord = tagIgnoreAttrs (matchCNN "CERIF") $ do
         resPubl <- many parseCfResPubl
+        resPublTitle <- many parseCfResPublTitle
+        resPublAbstr <- many parseCfResPublAbstr
+        resPublKeyw <- many parseCfResPublKeyw
+        pers <- many parseCfPers
+        persName <- many parseCfPersName
+        persName_Pers <- many parseCfPersName_Pers
+        pers_ResPubl <- many parseCfPers_ResPubl
+        orgUnit <- many parseCfOrgUnit
+        orgUnitName <- many parseCfOrgUnitName
         return
                 $ CerifRecord
                         resPubl
-                        []
-                        []
-                        []
-                        []
-                        []
-                        []
-                        []
-                        []
-                        []
-
+                        resPublTitle
+                        resPublAbstr
+                        resPublKeyw
+                        pers
+                        persName
+                        persName_Pers
+                        pers_ResPubl
+                        orgUnit
+                        orgUnitName
 
 parseCfResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl)
 parseCfResPubl = tagNoAttr (matchCNN "cfResPubl") $ do
@@ -216,3 +224,118 @@ parseCfResPubl = tagNoAttr (matchCNN "cfResPubl") $ do
                 $ CfResPubl
                         publId
                         publDate
+
+parseCfResPublTitle :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPublTitle)
+parseCfResPublTitle = tagNoAttr (matchCNN "cfResPublTitle") $ do
+        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
+        force "title missing" $ tag' (matchCNN "cfTitle") parseTitleAttr $ \(langCode, trans) -> do
+                title <- content
+                return
+                        $ CfResPublTitle
+                                publId
+                                langCode 
+                                trans
+                                title
+                where
+                        parseTitleAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+
+parseCfResPublAbstr :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPublAbstr)
+parseCfResPublAbstr = tagNoAttr (matchCNN "cfResPublAbstr") $ do
+        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
+        force "abstract missing" $ tag' (matchCNN "cfAbstr") parseAbstrAttr $ \(langCode, trans) -> do
+                abstr <- content
+                return
+                        $ CfResPublAbstr
+                                publId
+                                langCode 
+                                trans
+                                abstr
+                where
+                        parseAbstrAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+
+parseCfResPublKeyw :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPublKeyw)
+parseCfResPublKeyw = tagNoAttr (matchCNN "cfResPublKeyw") $ do
+        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
+        force "keywords missing" $ tag' (matchCNN "cfKeyw") parseKeywAttr $ \(langCode, trans) -> do
+                keyw <- content
+                return
+                        $ CfResPublKeyw
+                                publId
+                                langCode 
+                                trans
+                                keyw
+                where
+                        parseKeywAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+
+parseCfPers :: MonadThrow m => ConduitT X.Event o m (Maybe CfPers)
+parseCfPers = tagNoAttr (matchCNN "cfPers") $ do
+        persId <- force "persId missing" $ tagNoAttr (matchCNN "cfPersId") content
+        return
+                $ CfPers
+                        persId
+
+parseCfPersName :: MonadThrow m => ConduitT X.Event o m (Maybe CfPersName)
+parseCfPersName = tagNoAttr (matchCNN "cfPersName") $ do
+        persNameId <- force "persNameId missing" $ tagNoAttr (matchCNN "cfPersNameId") content
+        familyNames <- force "familyNames missing" $ tagNoAttr (matchCNN "cfFamilyNames") content
+        firstNames <- force "firstNames missing" $ tagNoAttr (matchCNN "cfFirstNames") content
+        return
+                $ CfPersName
+                        persNameId
+                        familyNames
+                        firstNames
+
+parseCfPersName_Pers :: MonadThrow m => ConduitT X.Event o m (Maybe CfPersName_Pers)
+parseCfPersName_Pers = tagNoAttr (matchCNN "cfPersName_Pers") $ do
+        persNameId <- force "persNameId missing" $ tagNoAttr (matchCNN "cfPersNameId") content
+        persId <- force "persId missing" $ tagNoAttr (matchCNN "cfPersId") content
+        classId <- force "classId missing" $ tagNoAttr (matchCNN "cfClassId") content
+        classSchemeId <- force "classSchemeId missing" $ tagNoAttr (matchCNN "cfClassSchemeId") content
+        startDate <- force "startDate missing" $ tagNoAttr (matchCNN "cfStartDate") content
+        endDate <- force "endDate missing" $ tagNoAttr (matchCNN "cfEndDate") content
+        return
+                $ CfPersName_Pers
+                        persNameId
+                        persId
+                        classId
+                        classSchemeId
+                        startDate
+                        endDate
+
+parseCfPers_ResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfPers_ResPubl)
+parseCfPers_ResPubl = tagNoAttr (matchCNN "cfPers_ResPubl") $ do
+        persId <- force "persId missing" $ tagNoAttr (matchCNN "cfPersId") content
+        resPublId <- force "resPublId missing" $ tagNoAttr (matchCNN "cfResPublId") content
+        classId <- force "classId missing" $ tagNoAttr (matchCNN "cfClassId") content
+        classSchemeId <- force "classSchemeId missing" $ tagNoAttr (matchCNN "cfClassSchemeId") content
+        startDate <- force "startDate missing" $ tagNoAttr (matchCNN "cfStartDate") content
+        endDate <- force "endDate missing" $ tagNoAttr (matchCNN "cfEndDate") content
+        return
+                $ CfPers_ResPubl
+                        persId
+                        resPublId
+                        classId
+                        classSchemeId
+                        startDate
+                        endDate
+
+parseCfOrgUnit :: MonadThrow m => ConduitT X.Event o m (Maybe CfOrgUnit)
+parseCfOrgUnit = tagNoAttr (matchCNN "cfOrgUnit") $ do
+        orgUnitId <- force "orgUnitId missing" $ tagNoAttr (matchCNN "cfOrgUnitId") content
+        return
+                $ CfOrgUnit
+                        orgUnitId
+
+parseCfOrgUnitName :: MonadThrow m => ConduitT X.Event o m (Maybe CfOrgUnitName)
+parseCfOrgUnitName = tagNoAttr (matchCNN "cfOrgUnitName") $ do
+        orgUnitId <- force "orgUnitId missing" $ tagNoAttr (matchCNN "cfOrgUnitId") content
+        force "name missing" $ tag' (matchCNN "cfName") parseNameAttr $ \(langCode, trans) -> do
+                name <- content
+                return
+                        $ CfOrgUnitName
+                                orgUnitId
+                                langCode 
+                                trans
+                                name
+                where
+                        parseNameAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
