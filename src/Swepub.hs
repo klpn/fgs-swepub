@@ -3,7 +3,7 @@
 module Swepub where
 
 import           Cerif
-import           Control.Lens
+import           Control.Lens hiding ((.=))
 import           Data.Aeson
 import           Data.Generics.Labels
 import           Data.List
@@ -33,7 +33,7 @@ data Identifier = Identifier {
         , identifierValue :: T.Text
         , identifierSource :: Maybe Source
 }
-        deriving (Show)
+        deriving (Show, Generic)
 
 data Contribution = Contribution {
         agent :: Agent 
@@ -70,7 +70,7 @@ data Language = Language {
 data Role = Role {
         roleid :: T.Text
 }
-        deriving (Show)
+        deriving (Show, Generic)
 
 data Summary = Summary {
         label :: T.Text
@@ -100,6 +100,13 @@ instance FromJSON SwepubRecord where
                 publication <- o .: "publication"
                 return SwepubRecord{..}
 
+instance ToJSON SwepubRecord where
+        toJSON SwepubRecord{..} = object [
+                "@context" .= T.pack "https://id.kb.se/context.jsonld"
+                , "@id" .= swepubId
+                , "@type" .= T.pack "Instance"
+                , "instanceOf" .= instanceOf]
+
 instance FromJSON SwepubInstance where
         parseJSON = withObject "swepubinstance" $ \o -> do
                 contribution <- o .: "contribution"
@@ -109,12 +116,16 @@ instance FromJSON SwepubInstance where
                 subject <- o .: "subject"
                 return SwepubInstance{..}
 
+instance ToJSON SwepubInstance
+
 instance FromJSON Identifier where
         parseJSON = withObject "identifier" $ \o -> do
                 identifierType <- o .: "@type"
                 identifierValue <- o .: "value"
                 identifierSource <- o .:? "source"
                 return Identifier{..}
+
+instance ToJSON Identifier
 
 instance FromJSON Contribution where
         parseJSON = withObject "contribution" $ \o -> do
@@ -123,15 +134,21 @@ instance FromJSON Contribution where
                 role <- o .: "role"
                 return Contribution{..}
 
+instance ToJSON Contribution
+
 instance FromJSON Language where
         parseJSON = withObject "language" $ \o -> do
                 code <- o .: "code"
                 return Language{..}
 
+instance ToJSON Language
+
 instance FromJSON Role where
         parseJSON = withObject "role" $ \o -> do
                 roleid <- o .: "@id"
                 return Role{..}
+
+instance ToJSON Role
 
 instance FromJSON Subject where
         parseJSON = withObject "subject" $ \o -> do
@@ -140,13 +157,20 @@ instance FromJSON Subject where
                 language <- o .: "language"
                 return Subject{..}
 
+instance ToJSON Subject
+
 instance FromJSON Agent where
         parseJSON = genericParseJSON swepubOptions
 
+instance ToJSON Agent
+
 instance FromJSON Title
+instance ToJSON Title 
 instance FromJSON Source
+instance ToJSON Source
 instance FromJSON Publication
 instance FromJSON Summary
+instance ToJSON Summary
 
 instance FromJSON Affiliation where
         parseJSON = withObject "affiliation" $ \o -> do
@@ -155,6 +179,8 @@ instance FromJSON Affiliation where
                 identifiedBy <- o .: "identifiedBy"
                 affiliation <- o .:? "hasAffiliation"
                 return Affiliation{..}
+
+instance ToJSON Affiliation
 
 swepubOptions = defaultOptions {sumEncoding = defaultTaggedObject{tagFieldName="@type"}}
 

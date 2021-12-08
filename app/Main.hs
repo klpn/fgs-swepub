@@ -14,6 +14,7 @@ import           System.Exit
 import           System.IO (hPutStrLn, stderr)
 import           Text.XML
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as L8 
 import qualified Data.Text.Lazy.IO as TIO
 import qualified Text.XML.Stream.Parse as XP
 
@@ -52,6 +53,7 @@ biblput "cerifxml" t = do
         cerif <- runConduitRes $ XP.parseLBS XP.def cerifinRaw .| XP.force "CERIF missing" parseCerifRecord
         case t of
                 "cerifnat" -> putStrLn $ show cerif
+                "swepubjson" -> mapM_ L8.putStrLn (encode <$> (toSwepubRecords cerif))
                 "swepubnat" -> putStrLn $ show (toSwepubRecords cerif)
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
