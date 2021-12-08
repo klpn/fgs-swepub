@@ -34,7 +34,7 @@ biblput :: String -> String -> IO ()
 biblput "swepubjson" t = do
         biblinRaw <- L.getContents
         let biblin = init $ L.split 10 biblinRaw
-        let biblo = map (\b -> eitherDecode b :: Either String SwepubRecord) biblin
+        let biblo = (\b -> eitherDecode b :: Either String SwepubRecord) <$> biblin
         let biblerr = lefts biblo
         let biblrec = rights biblo
         if (length biblerr) > 0 
@@ -43,8 +43,8 @@ biblput "swepubjson" t = do
                 else do
                         return ()
         case t of
-                "cerifnat" -> putStrLn (show $ map toCfResPubl biblrec)
-                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (map toCfResPubl biblrec)))
+                "cerifnat" -> putStrLn (show $ toCfResPubl <$> biblrec)
+                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (toCfResPubl <$> biblrec)))
                 "swepubnat" -> putStrLn (show biblrec)
                 _ -> usage "unrecognized format"
 biblput "cerifxml" t = do
@@ -52,6 +52,7 @@ biblput "cerifxml" t = do
         cerif <- runConduitRes $ XP.parseLBS XP.def cerifinRaw .| XP.force "CERIF missing" parseCerifRecord
         case t of
                 "cerifnat" -> putStrLn $ show cerif
+                "swepubnat" -> putStrLn $ show (toSwepubRecords cerif)
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
 

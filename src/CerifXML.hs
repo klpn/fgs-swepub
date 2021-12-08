@@ -57,16 +57,16 @@ $forall crou <- crous
 $forall croun <- crouns
         ^{toCerifXMLOrgUnitName croun}
 |]
-                crpus = nub $ concat $ map (\cr -> cr ^. #resPubl) crs
-                crts = nub $ concat $ map (\cr -> cr ^. #resPublTitle) crs
-                crabs = nub $ concat $ map (\cr -> cr ^. #resPublAbstr) crs
-                crkeyws = nub $ concat $ map (\cr -> cr ^. #resPublKeyw) crs
-                crps = nub $ concat $ map (\cr -> cr ^. #pers) crs
-                crpns = nub $ concat $ map (\cr -> cr ^. #persName) crs
-                crpnps = nub $ concat $ map (\cr -> cr ^. #persName_Pers) crs
-                crprps = nub $ concat $ map (\cr -> cr ^. #pers_ResPubl) crs
-                crous = nub $ concat $ map (\cr -> cr ^. #orgUnit) crs
-                crouns = nub $ concat $ map (\cr -> cr ^. #orgUnitName) crs
+                crpus = nub $ concat $ (\cr -> cr ^. #resPubl) <$> crs
+                crts = nub $ concat $ (\cr -> cr ^. #resPublTitle) <$> crs
+                crabs = nub $ concat $ (\cr -> cr ^. #resPublAbstr) <$> crs
+                crkeyws = nub $ concat $ (\cr -> cr ^. #resPublKeyw) <$> crs
+                crps = nub $ concat $ (\cr -> cr ^. #pers) <$> crs
+                crpns = nub $ concat $ (\cr -> cr ^. #persName) <$> crs
+                crpnps = nub $ concat $ (\cr -> cr ^. #persName_Pers) <$> crs
+                crprps = nub $ concat $ (\cr -> cr ^. #pers_ResPubl) <$> crs
+                crous = nub $ concat $ (\cr -> cr ^. #orgUnit) <$> crs
+                crouns = nub $ concat $ (\cr -> cr ^. #orgUnitName) <$> crs
 
 toCerifXMLResPubl :: CfResPubl -> [Node] 
 toCerifXMLResPubl crpu = [xml|

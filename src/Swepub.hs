@@ -173,34 +173,34 @@ toCfResPubl sr = CerifRecord {
 }
 
 dates :: SwepubRecord -> [T.Text]
-dates sr =  map (\p -> T.pack $ T.unpack(date p) ++ "-01-01") (publication sr)
+dates sr = (\p -> T.pack $ T.unpack(date p) ++ "-01-01") <$> (publication sr)
 
 titles :: SwepubRecord -> [CfResPublTitle]
-titles sr = map (\t -> toCfResPublTitle sr t) (title $ instanceOf sr)
+titles sr = (\t -> toCfResPublTitle sr t) <$> (title $ instanceOf sr)
 
 abstrs :: SwepubRecord -> [CfResPublAbstr]
-abstrs sr = map (\s -> toCfResPublAbstr sr s) (summary $ instanceOf sr)
+abstrs sr = (\s -> toCfResPublAbstr sr s) <$> (summary $ instanceOf sr)
 
 keyws :: SwepubRecord -> [CfResPublKeyw]
-keyws sr = map (\s -> toCfResPublKeyw sr s) (subject $ instanceOf sr)
+keyws sr = (\s -> toCfResPublKeyw sr s) <$> (subject $ instanceOf sr)
 
 persons :: SwepubRecord -> [CfPers]
-persons sr = map toCfPers [a | a@(Person {}) <- agents]
+persons sr = toCfPers <$> [a | a@(Person {}) <- agents]
         where
-                agents = map agent (contribution $ instanceOf sr)
+                agents = agent <$> (contribution $ instanceOf sr)
 
 persnames :: SwepubRecord -> [CfPersName]
-persnames sr = map toCfPersName [a | a@(Person {}) <- agents]
+persnames sr = toCfPersName <$> [a | a@(Person {}) <- agents]
         where
-                agents = map agent (contribution $ instanceOf sr)
+                agents = agent <$> (contribution $ instanceOf sr)
 
 persnames_pers :: SwepubRecord -> [CfPersName_Pers]
-persnames_pers sr = map toCfPersName_Pers [a | a@(Person {}) <- agents]
+persnames_pers sr = toCfPersName_Pers <$> [a | a@(Person {}) <- agents]
         where
-                agents = map agent (contribution $ instanceOf sr)
+                agents = agent <$> (contribution $ instanceOf sr)
 
 pers_respubl :: SwepubRecord -> [CfPers_ResPubl]
-pers_respubl sr = concat $ map (\c -> pers_respublContr sr c) [c | c <- contrs, isPerson (agent c)]
+pers_respubl sr = concat $ (\c -> pers_respublContr sr c) <$> [c | c <- contrs, isPerson (agent c)]
         where
                 contrs = contribution $ instanceOf sr
 
@@ -209,20 +209,20 @@ isPerson Person {} = True
 isPerson Organization {} = False
 
 pers_respublContr :: SwepubRecord -> Contribution -> [CfPers_ResPubl]
-pers_respublContr sr c = map (\r -> toCfPers_ResPubl sr (agent c) r) (role c)
+pers_respublContr sr c = (\r -> toCfPers_ResPubl sr (agent c) r) <$> (role c)
 
 ous :: SwepubRecord -> [CfOrgUnit]
-ous sr = nub $ map toCfOrgUnit (affils sr)
+ous sr = nub $ toCfOrgUnit <$> (affils sr)
 
 ounames :: SwepubRecord -> [CfOrgUnitName]
-ounames sr = nub $ map toCfOrgUnitName (affils sr)
+ounames sr = nub $ toCfOrgUnitName <$> (affils sr)
 
 affils :: SwepubRecord -> [Affiliation]
-affils sr = concat (map (fromMaybe []) affs)
+affils sr = concat ((fromMaybe []) <$> affs)
         where
                 affs = concat [mainaffs, subaffs]
-                mainaffs = map (\a -> a ^. #affiliation) (contribution $ instanceOf sr)
-                subaffs = map (\a -> a ^. #affiliation) (concat (map (fromMaybe []) mainaffs))
+                mainaffs = (\a -> a ^. #affiliation) <$> (contribution $ instanceOf sr)
+                subaffs = (\a -> a ^. #affiliation) <$> (concat ((fromMaybe []) <$> mainaffs))
 
 toCfResPublTitle :: SwepubRecord -> Title -> CfResPublTitle
 toCfResPublTitle sr t =
@@ -290,3 +290,23 @@ toCfOrgUnitName a = CfOrgUnitName {
         where
                 l = a ^. #language . #code
                 n = a ^. #name
+
+toSwepubRecords :: CerifRecord -> [SwepubRecord]
+toSwepubRecords cr = (\crpu -> toSwepubRecord cr crpu) <$> cr ^. #resPubl
+
+toSwepubRecord :: CerifRecord -> CfResPubl -> SwepubRecord
+toSwepubRecord cr crpu = SwepubRecord {
+        swepubId = crpu ^. #cfResPublId
+        , identifiedBy = []
+        , instanceOf = toSwepubInstance cr crpu
+        , publication = []
+}
+
+toSwepubInstance :: CerifRecord -> CfResPubl -> SwepubInstance
+toSwepubInstance cr crpu = SwepubInstance {
+        contribution = []
+        , title = []
+        , language = []
+        , summary = []
+        , subject = []
+}
