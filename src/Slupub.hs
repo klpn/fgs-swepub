@@ -27,7 +27,25 @@ instance FromJSON SlupubRecord
 
 instance FromJSON SluPublication where
         parseJSON = withObject "slupublication" $ \o -> do
-                publId <- o .: "publ_id"
-                publYear <- o .: "publ_year"
+                publIdRaw <- o .: "publ_id"
+                publYearRaw <- o .: "publyear"
                 title <- o .: "cftitle"
+                let publId = T.takeWhile (/='.') publIdRaw
+                let publYear = T.takeWhile (/='.') publYearRaw
                 return SluPublication{..}
+
+slupubToCfResPubl :: SlupubRecord -> CerifRecord
+slupubToCfResPubl sr = CerifRecord {
+        resPubl = [CfResPubl {cfResPublId = (publId $ publication sr),
+                cfResPublDate = (publYear $ publication sr)}]
+        , resPublTitle = [CfResPublTitle {cfResPublId = (publId $ publication sr),
+                cfLangCode = "en_US", cfTrans = "o", cfTitle = (title $ publication sr)}]
+        , resPublAbstr = []
+        , resPublKeyw = []
+        , pers = []
+        , persName = []
+        , persName_Pers = []
+        , pers_ResPubl = []
+        , orgUnit = []
+        , orgUnitName = []
+}

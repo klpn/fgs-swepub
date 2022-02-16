@@ -27,6 +27,7 @@ library
   exposed-modules:
       Cerif
       CerifXML
+      Slupub
       Swepub
   other-modules:
       Paths_fgs_swepub

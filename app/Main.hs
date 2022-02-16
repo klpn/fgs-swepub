@@ -7,6 +7,7 @@ import           CerifXML
 import           Conduit
 import           Data.Aeson
 import           Data.Either
+import           Slupub
 import           Swepub
 import           System.Console.GetOpt
 import           System.Environment
@@ -32,6 +33,16 @@ options = [
         , Option ['t'] ["to"] (ReqArg ToFormat "OUTFORMAT") "Output format"]
 
 biblput :: String -> String -> IO ()
+biblput "slupubjson" t = do
+        biblin <- L.getContents
+        let biblo = eitherDecode biblin :: Either String SlupubRecord
+        case biblo of
+                Left err -> hPutStrLn stderr err
+                Right biblrec ->
+                        case t of
+                                "cerifnat" -> putStrLn (show $ slupubToCfResPubl biblrec)
+                                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML [slupubToCfResPubl biblrec]))
+                                _ -> usage "unrecognized format"
 biblput "swepubjson" t = do
         biblinRaw <- L.getContents
         let biblin = init $ L.split 10 biblinRaw
