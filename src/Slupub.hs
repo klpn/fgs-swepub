@@ -20,6 +20,9 @@ data SluPublication = SluPublication {
         publId :: T.Text
         , publYear :: T.Text
         , title :: T.Text
+        , language :: T.Text
+        , abstract :: T.Text
+        , keyword :: [T.Text]
 }
         deriving (Show)
 
@@ -30,8 +33,12 @@ instance FromJSON SluPublication where
                 publIdRaw <- o .: "publ_id"
                 publYearRaw <- o .: "publyear"
                 title <- o .: "cftitle"
+                language <- o .: "language_cgvalue"
+                abstract <- o .: "cfabstr"
+                keywRaw <- o .: "srckeywords"
                 let publId = T.takeWhile (/='.') publIdRaw
                 let publYear = T.takeWhile (/='.') publYearRaw
+                let keyword = T.splitOn "; " keywRaw
                 return SluPublication{..}
 
 slupubToCfResPubl :: SlupubRecord -> CerifRecord
@@ -39,8 +46,11 @@ slupubToCfResPubl sr = CerifRecord {
         resPubl = [CfResPubl {cfResPublId = (publId $ publication sr),
                 cfResPublDate = (publYear $ publication sr)}]
         , resPublTitle = [CfResPublTitle {cfResPublId = (publId $ publication sr),
-                cfLangCode = "en_US", cfTrans = "o", cfTitle = (title $ publication sr)}]
-        , resPublAbstr = []
+                cfLangCode = (language $ publication sr), 
+                cfTrans = "o", cfTitle = (title $ publication sr)}]
+        , resPublAbstr = [CfResPublAbstr {cfResPublId = (publId $ publication sr),
+                cfLangCode = (language $ publication sr), 
+                cfTrans = "o", cfAbstr = (abstract $ publication sr)}]
         , resPublKeyw = []
         , pers = []
         , persName = []
