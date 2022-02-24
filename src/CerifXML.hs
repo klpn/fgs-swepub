@@ -10,7 +10,7 @@ import           Data.List
 import           Text.Hamlet.XML
 import           Text.XML
 import           Text.XML.Stream.Parse
-import           qualified Data.Map.Strict as M
+import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.XML.Types as X
 

@@ -199,7 +199,7 @@ toCfResPubl sr = CerifRecord {
 }
 
 dates :: SwepubRecord -> [T.Text]
-dates sr = (\p -> T.pack $ T.unpack(date p) ++ "-01-01") <$> (publication sr)
+dates sr = (\p -> T.concat [(date p), "-01-01"]) <$> (publication sr)
 
 titles :: SwepubRecord -> [CfResPublTitle]
 titles sr = (\t -> toCfResPublTitle sr t) <$> (title $ instanceOf sr)
@@ -278,7 +278,7 @@ toCfPers a = CfPers {cfPersId = (identifierValue $ (a ^. #identifiedBy) !! 0)}
 
 toCfPersName :: Agent -> CfPersName
 toCfPersName a = CfPersName {
-        cfPersNameId = T.pack $ (T.unpack $ identifierValue $ (a ^. #identifiedBy) !! 0) ++ "-N"
+        cfPersNameId = T.concat [(identifierValue $ (a ^. #identifiedBy) !! 0), "-N"]
         , cfFamilyNames = familyName a
         , cfFirstNames = givenName a
 }
@@ -286,7 +286,7 @@ toCfPersName a = CfPersName {
 toCfPersName_Pers :: Agent -> CfPersName_Pers
 toCfPersName_Pers a = CfPersName_Pers {
         cfPersId = (identifierValue $ (a ^. #identifiedBy) !! 0)
-        , cfPersNameId = T.pack $ (T.unpack $ identifierValue $ (a ^. #identifiedBy) !! 0) ++ "-N"
+        , cfPersNameId = T.concat [(identifierValue $ (a ^. #identifiedBy) !! 0), "-N"]
         , cfClassId = "SwepubName"
         , cfClassSchemeId = "FGS_Swepub"
         , cfStartDate = "1900-01-01T00:00:00"

@@ -27,6 +27,7 @@ library
   exposed-modules:
       Cerif
       CerifXML
+      Isolang
       Slupub
       Swepub
   other-modules:

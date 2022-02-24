@@ -7,13 +7,13 @@ import           CerifXML
 import           Conduit
 import           Data.Aeson
 import           Data.Either
-import           Slupub
-import           Swepub
 import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit
 import           System.IO (hPutStrLn, stderr)
 import           Text.XML
+import qualified Slupub as SL
+import qualified Swepub as SW
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8 
 import qualified Data.Text.Lazy.IO as TIO
@@ -35,18 +35,18 @@ options = [
 biblput :: String -> String -> IO ()
 biblput "slupubjson" t = do
         biblin <- L.getContents
-        let biblo = eitherDecode biblin :: Either String SlupubRecord
+        let biblo = eitherDecode biblin :: Either String SL.SlupubRecord
         case biblo of
                 Left err -> hPutStrLn stderr err
                 Right biblrec ->
                         case t of
-                                "cerifnat" -> putStrLn (show $ slupubToCfResPubl biblrec)
-                                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML [slupubToCfResPubl biblrec]))
+                                "cerifnat" -> putStrLn (show $ SL.toCfResPubl biblrec)
+                                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML [SL.toCfResPubl biblrec]))
                                 _ -> usage "unrecognized format"
 biblput "swepubjson" t = do
         biblinRaw <- L.getContents
         let biblin = init $ L.split 10 biblinRaw
-        let biblo = (\b -> eitherDecode b :: Either String SwepubRecord) <$> biblin
+        let biblo = (\b -> eitherDecode b :: Either String SW.SwepubRecord) <$> biblin
         let biblerr = lefts biblo
         let biblrec = rights biblo
         if (length biblerr) > 0 
@@ -55,8 +55,8 @@ biblput "swepubjson" t = do
                 else do
                         return ()
         case t of
-                "cerifnat" -> putStrLn (show $ toCfResPubl <$> biblrec)
-                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (toCfResPubl <$> biblrec)))
+                "cerifnat" -> putStrLn (show $ SW.toCfResPubl <$> biblrec)
+                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (SW.toCfResPubl <$> biblrec)))
                 "swepubnat" -> putStrLn (show biblrec)
                 _ -> usage "unrecognized format"
 biblput "cerifxml" t = do
@@ -64,8 +64,8 @@ biblput "cerifxml" t = do
         cerif <- runConduitRes $ XP.parseLBS XP.def cerifinRaw .| XP.force "CERIF missing" parseCerifRecord
         case t of
                 "cerifnat" -> putStrLn $ show cerif
-                "swepubjson" -> mapM_ L8.putStrLn (encode <$> (toSwepubRecords cerif))
-                "swepubnat" -> putStrLn $ show (toSwepubRecords cerif)
+                "swepubjson" -> mapM_ L8.putStrLn (encode <$> (SW.toSwepubRecords cerif))
+                "swepubnat" -> putStrLn $ show (SW.toSwepubRecords cerif)
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
 
