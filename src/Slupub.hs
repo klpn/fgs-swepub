@@ -87,7 +87,7 @@ instance FromJSON SluOrg where
 toCfResPubl :: SlupubRecord -> CerifRecord
 toCfResPubl sr = CerifRecord {
         resPubl = [CfResPubl {cfResPublId = (publId $ publication sr),
-                cfResPublDate = (publYear $ publication sr)}]
+                cfResPublDate = T.concat[(publYear $ publication sr), "-01-01"]}]
         , resPublTitle = [CfResPublTitle {cfResPublId = (publId $ publication sr),
                 cfLangCode = (language $ publication sr), 
                 cfTrans = "o", cfTitle = (title $ publication sr)}]
