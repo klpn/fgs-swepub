@@ -331,8 +331,31 @@ toSwepubRecord cr crpu = SwepubRecord {
 toSwepubInstance :: CerifRecord -> CfResPubl -> SwepubInstance
 toSwepubInstance cr crpu = SwepubInstance {
         contribution = []
-        , title = []
-        , language = []
-        , summary = []
-        , subject = []
+        , title = toSwepubTitle cr crpu
+        , language = toSwepubLanguage cr crpu
+        , summary = toSwepubSummary cr crpu
+        , subject = toSwepubSubject cr crpu
+}
+
+toSwepubSummary :: CerifRecord -> CfResPubl -> [Summary]
+toSwepubSummary cr crpu = (\a -> Summary {label = a ^. #cfAbstr}) <$>
+        [a | a <- (cr ^. #resPublAbstr), a ^. #cfResPublId == crpu ^. #cfResPublId]
+
+toSwepubTitle :: CerifRecord -> CfResPubl -> [Title]
+toSwepubTitle cr crpu = (\a -> Title {mainTitle = a ^. #cfTitle}) <$>
+        [a | a <- (cr ^. #resPublTitle), a ^. #cfResPublId == crpu ^. #cfResPublId]
+
+toSwepubLanguage :: CerifRecord -> CfResPubl -> [Language]
+toSwepubLanguage cr crpu = (\a -> Language {code = a ^. #cfLangCode}) <$>
+        [a | a <- (cr ^. #resPublTitle), a ^. #cfResPublId == crpu ^. #cfResPublId]
+
+toSwepubSubject :: CerifRecord -> CfResPubl -> [Subject]
+toSwepubSubject cr crpu = subj <$>
+        [a | a <- (cr ^. #resPublKeyw), a ^. #cfResPublId == crpu ^. #cfResPublId]
+
+subj :: CfResPublKeyw -> Subject
+subj k = Subject {
+        subjcode = k ^. #cfKeyw
+        , language = Language {code = k ^. #cfLangCode}
+        , prefLabel = k ^. #cfKeyw
 }
