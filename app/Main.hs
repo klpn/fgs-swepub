@@ -7,6 +7,7 @@ import           CerifXML
 import           Conduit
 import           Data.Aeson
 import           Data.Either
+import           ModsXML
 import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit

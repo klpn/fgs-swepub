@@ -28,6 +28,7 @@ library
       Cerif
       CerifXML
       Isolang
+      ModsXML
       Slupub
       Swepub
   other-modules:
