@@ -16,3 +16,30 @@ import qualified Data.XML.Types as X
 
 modsns :: T.Text
 modsns = "http://www.loc.gov/mods/v3"
+
+data ModsRecord = ModsRecord {
+        originInfo :: [ModsOriginInfo]
+        , name :: [ModsName]
+        , abstract :: [T.Text]
+        , identifier :: [ModsIdentifier]
+        , subject :: [ModsSubject]
+}
+
+data ModsOriginInfo = ModsOriginInfo {
+        dateIssued :: Maybe Integer
+        , publisher :: Maybe T.Text
+}
+
+data ModsName = ModsName {
+        nameType :: T.Text
+}
+
+data ModsIdentifier = ModsIdentifier {
+        identifierType :: T.Text
+        , identifierValue :: T.Text
+}
+
+data ModsSubject = ModsSubject {
+        language :: T.Text
+        , topic :: T.Text
+}
