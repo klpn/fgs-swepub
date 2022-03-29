@@ -32,6 +32,9 @@ data ModsOriginInfo = ModsOriginInfo {
 
 data ModsName = ModsName {
         nameType :: T.Text
+        , namePart :: [ModsIdentifier]
+        , nameRole :: [T.Text]
+        , nameIdentifier :: [ModsIdentifier]
 }
 
 data ModsIdentifier = ModsIdentifier {
@@ -42,4 +45,18 @@ data ModsIdentifier = ModsIdentifier {
 data ModsSubject = ModsSubject {
         language :: T.Text
         , topic :: T.Text
+}
+
+toCfResPubl :: ModsRecord -> CerifRecord
+toCfResPubl cr = CerifRecord {
+        resPubl = []
+        , resPublTitle = []
+        , resPublAbstr = []
+        , resPublKeyw = []
+        , pers = []
+        , persName = []
+        , persName_Pers = []
+        , pers_ResPubl = []
+        , orgUnit = []
+        , orgUnitName = []
 }
