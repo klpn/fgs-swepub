@@ -18,16 +18,32 @@ modsns :: T.Text
 modsns = "http://www.loc.gov/mods/v3"
 
 data ModsRecord = ModsRecord {
-        originInfo :: [ModsOriginInfo]
+        recordInfo :: ModsRecordInfo
+        , originInfo :: [ModsOriginInfo]
+        , language :: [ModsLanguage]
+        , titleInfo :: [ModsTitleInfo]
         , name :: [ModsName]
         , abstract :: [T.Text]
         , identifier :: [ModsIdentifier]
         , subject :: [ModsSubject]
 }
 
+data ModsRecordInfo = ModsRecordInfo {
+        recordContentSource :: T.Text
+        , recordIdentifier :: T.Text
+}
+
 data ModsOriginInfo = ModsOriginInfo {
         dateIssued :: Maybe Integer
         , publisher :: Maybe T.Text
+}
+
+data ModsLanguage = ModsLanguage {
+        language :: T.Text
+}
+
+data ModsTitleInfo = ModsTitleInfo {
+        title :: T.Text
 }
 
 data ModsName = ModsName {
