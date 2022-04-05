@@ -28,6 +28,7 @@ data SluPublication = SluPublication {
         , abstract :: T.Text
         , keyword :: [T.Text]
         , card :: [SluCard]
+        , publType :: T.Text
 }
         deriving (Show)
 
@@ -40,6 +41,7 @@ instance FromJSON SluPublication where
                 abstract <- o .: "cfabstr"
                 card <- o .: "related_cards"
                 keywRaw <- o .: "srckeywords"
+                publType <- o .: "publication_type_cgvalue"
                 let publId = T.takeWhile (/='.') publIdRaw
                 let publYear = T.takeWhile (/='.') publYearRaw
                 let keyword = T.splitOn "; " keywRaw
@@ -83,6 +85,31 @@ instance FromJSON SluOrg where
                 orgShortDescr <- o .: "short_description__1"
                 oid <- o .: "oid"
                 return SluOrg{..}
+
+cfclasses :: M.Map T.Text T.Text
+cfclasses = M.fromList [
+        ("Journal article", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("Journal article review", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("editorial", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("letter", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("data_paper", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("other_sci", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("Conference proceedings article", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("Conference proceeeding", "eda2d9e9-34c5-11e1-b86c-0800200c9a66")
+        , ("conference_abstract", "154e80ab-e825-4f7c-9430-bdf7ee971425")
+        , ("conference_poster", "93aa5afc-19e5-4995-99b5-47ee8c80b3fc")
+        , ("conference_other", "43afa201-2979-42b0-b283-ed609058d90a")
+        , ("Edited book", "f5e38c52-d56a-4878-879c-31526788b19d")
+        , ("Authored book", "2522c045-5090-4da2-824c-583e039e23b3")
+        , ("Inbook", "b7ddff91-81b9-42b1-8228-190329ea6557")
+        , ("Doctoral thesis", "eda2d9f1-34c5-11e1-b86c-0800200c9a66")
+        , ("Licentiate thesis", "eda2d9f1-34c5-11e1-b86c-0800200c9a66")
+        , ("Report", "eda2d9f1-34c5-11e1-b86c-0800200c9a66")
+        , ("Report chapter", "eda2d9f1-34c5-11e1-b86c-0800200c9a66")
+        , ("Patent", "cf7799e3-3477-11e1-b86c-0800200c9a66")
+        , ("Other", "7eb3f358-bfc1-45d4-9ec6-b16d99f0ded6")
+        , ("magazine_article", "d4753dda-e7a0-4837-ae7d-648a8d85b62c")
+        , ("newspaper_article", "d4753dda-e7a0-4837-ae7d-648a8d85b62c")]
 
 toCfResPubl :: SlupubRecord -> CerifRecord
 toCfResPubl sr = CerifRecord {
