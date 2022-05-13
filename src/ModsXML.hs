@@ -86,7 +86,7 @@ cfclasses = M.fromList [
 
 toCfResPubl :: ModsRecord -> CerifRecord
 toCfResPubl cr = CerifRecord {
-        resPubl = []
+        resPubl = [CfResPubl {cfResPublId = (recordIdentifier $ recordInfo cr), cfResPublDate = "2017-01-01"}]
         , resPublTitle = []
         , resPublAbstr = []
         , resPublKeyw = []
