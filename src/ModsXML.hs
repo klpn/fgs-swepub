@@ -7,6 +7,8 @@ import           Conduit
 import           Control.Lens hiding (matching)
 import           Data.Generics.Labels
 import           Data.List
+import           Data.Maybe
+import           GHC.Generics
 import           Text.Hamlet.XML
 import           Text.XML
 import           Text.XML.Stream.Parse
@@ -19,6 +21,7 @@ modsns = "http://www.loc.gov/mods/v3"
 
 data ModsRecord = ModsRecord {
         recordInfo :: ModsRecordInfo
+        , genre :: [ModsGenre]
         , originInfo :: [ModsOriginInfo]
         , language :: [ModsLanguage]
         , titleInfo :: [ModsTitleInfo]
@@ -33,14 +36,19 @@ data ModsRecordInfo = ModsRecordInfo {
         , recordIdentifier :: T.Text
 }
 
+data ModsGenre = ModsGenre {
+        genreTerm :: T.Text
+}
+
 data ModsOriginInfo = ModsOriginInfo {
         dateIssued :: Maybe Integer
         , publisher :: Maybe T.Text
 }
 
 data ModsLanguage = ModsLanguage {
-        language :: T.Text
+        languageTerm :: T.Text
 }
+        deriving (Show, Generic)
 
 data ModsTitleInfo = ModsTitleInfo {
         title :: T.Text
@@ -59,7 +67,7 @@ data ModsIdentifier = ModsIdentifier {
 }
 
 data ModsSubject = ModsSubject {
-        language :: T.Text
+        languageTerm :: T.Text
         , topic :: T.Text
 }
 
@@ -84,12 +92,20 @@ cfclasses = M.fromList [
         , ("publication/magazine-article", "d4753dda-e7a0-4837-ae7d-648a8d85b62c")
         , ("publication/newspaper-article", "d4753dda-e7a0-4837-ae7d-648a8d85b62c")]
 
+issdates :: [ModsOriginInfo] -> [Integer]
+issdates moi = catMaybes (dateIssued <$> moi)
+
+publclasses :: [ModsGenre] -> [T.Text]
+publclasses mgi = catMaybes ((\g -> M.lookup (genreTerm g) cfclasses) <$> mgi)
+
 toCfResPubl :: ModsRecord -> CerifRecord
-toCfResPubl cr = CerifRecord {
-        resPubl = [CfResPubl {cfResPublId = (recordIdentifier $ recordInfo cr), cfResPublDate = "2017-01-01"}]
-        , resPublTitle = []
-        , resPublAbstr = []
+toCfResPubl mr = CerifRecord {
+        resPubl = [CfResPubl {cfResPublId = (recordIdentifier $ recordInfo mr)
+                , cfResPublDate = T.pack $ show ((issdates $ originInfo mr) !! 0) ++ "-01-01"}]
+        , resPublTitle = titles mr 
+        , resPublAbstr = abstrs mr
         , resPublKeyw = []
+        , resPubl_Class = rpclasses mr
         , pers = []
         , persName = []
         , persName_Pers = []
@@ -97,3 +113,37 @@ toCfResPubl cr = CerifRecord {
         , orgUnit = []
         , orgUnitName = []
 }
+
+titles :: ModsRecord -> [CfResPublTitle]
+titles mr = (\t -> toCfResPublTitle mr t) <$> (titleInfo mr)
+
+toCfResPublTitle :: ModsRecord -> ModsTitleInfo -> CfResPublTitle
+toCfResPublTitle mr t =
+        CfResPublTitle {cfResPublId = ri, cfLangCode = l, cfTrans = "o", cfTitle = title t}
+                where
+                        ri = recordIdentifier $ recordInfo mr
+                        l = (language mr !! 0) ^. #languageTerm
+
+abstrs :: ModsRecord -> [CfResPublAbstr]
+abstrs mr = (\a -> toCfResPublAbstr mr a) <$> (abstract mr)
+
+toCfResPublAbstr :: ModsRecord -> T.Text -> CfResPublAbstr
+toCfResPublAbstr mr a =
+        CfResPublAbstr {cfResPublId = ri, cfLangCode = l, cfTrans = "o", cfAbstr = a}
+                where
+                        ri = recordIdentifier $ recordInfo mr
+                        l = (language mr !! 0) ^. #languageTerm
+
+
+rpclasses :: ModsRecord -> [CfResPubl_Class]
+rpclasses mr = (\c -> toCfResPubl_Class mr c) <$> (publclasses $ genre mr)
+
+toCfResPubl_Class :: ModsRecord -> T.Text -> CfResPubl_Class
+toCfResPubl_Class mr c =
+        CfResPubl_Class {
+                        cfResPublId = recordIdentifier $ recordInfo mr
+                        , cfClassId = c
+                        , cfClassSchemeId = "FGS_Swepub" 
+                        , cfStartDate = "1900-01-01T00:00:00"
+                        , cfEndDate = "2099-12-31T00:00:00"
+                }

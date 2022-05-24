@@ -12,6 +12,7 @@ data CerifRecord = CerifRecord {
         , resPublTitle :: [CfResPublTitle]
         , resPublAbstr :: [CfResPublAbstr]
         , resPublKeyw :: [CfResPublKeyw]
+        , resPubl_Class:: [CfResPubl_Class]
         , pers :: [CfPers]
         , persName :: [CfPersName]
         , persName_Pers :: [CfPersName_Pers]
@@ -48,6 +49,15 @@ data CfResPublKeyw = CfResPublKeyw {
         , cfLangCode :: T.Text
         , cfTrans :: T.Text
         , cfKeyw :: T.Text
+}
+        deriving (Eq, Show, Generic)
+
+data CfResPubl_Class = CfResPubl_Class {
+        cfResPublId :: T.Text
+        , cfClassId :: T.Text
+        , cfClassSchemeId :: T.Text
+        , cfStartDate :: T.Text
+        , cfEndDate :: T.Text
 }
         deriving (Eq, Show, Generic)
 

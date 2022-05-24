@@ -197,6 +197,7 @@ parseCerifRecord = tagIgnoreAttrs (matchCNN "CERIF") $ do
         resPublTitle <- many parseCfResPublTitle
         resPublAbstr <- many parseCfResPublAbstr
         resPublKeyw <- many parseCfResPublKeyw
+        resPubl_Class <- many parseCfResPubl_Class
         pers <- many parseCfPers
         persName <- many parseCfPersName
         persName_Pers <- many parseCfPersName_Pers
@@ -209,6 +210,7 @@ parseCerifRecord = tagIgnoreAttrs (matchCNN "CERIF") $ do
                         resPublTitle
                         resPublAbstr
                         resPublKeyw
+                        resPubl_Class
                         pers
                         persName
                         persName_Pers
@@ -266,6 +268,21 @@ parseCfResPublKeyw = tagNoAttr (matchCNN "cfResPublKeyw") $ do
                                 keyw
                 where
                         parseKeywAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+
+parseCfResPubl_Class:: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl_Class )
+parseCfResPubl_Class = tagNoAttr (matchCNN "cfResPubl_Class") $ do
+        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
+        classId <- force "classId missing" $ tagNoAttr (matchCNN "cfClassId") content
+        classSchemeId <- force "classSchemeId missing" $ tagNoAttr (matchCNN "cfClassSchemeId") content
+        startDate <- force "startDate missing" $ tagNoAttr (matchCNN "cfStartDate") content
+        endDate <- force "endDate missing" $ tagNoAttr (matchCNN "cfEndDate") content
+        return
+                $ CfResPubl_Class
+                        publId
+                        classId
+                        classSchemeId
+                        startDate
+                        endDate
 
 parseCfPers :: MonadThrow m => ConduitT X.Event o m (Maybe CfPers)
 parseCfPers = tagNoAttr (matchCNN "cfPers") $ do

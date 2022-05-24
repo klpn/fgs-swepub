@@ -122,6 +122,7 @@ toCfResPubl sr = CerifRecord {
                 cfLangCode = (language $ publication sr), 
                 cfTrans = "o", cfAbstr = (abstract $ publication sr)}]
         , resPublKeyw = keyws sr
+        , resPubl_Class = []
         , pers = persons sr
         , persName = persnames sr
         , persName_Pers = persnames_pers sr 

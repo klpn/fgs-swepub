@@ -190,6 +190,7 @@ toCfResPubl sr = CerifRecord {
         , resPublTitle = titles sr
         , resPublAbstr = abstrs sr
         , resPublKeyw = keyws sr
+        , resPubl_Class = []
         , pers = persons sr
         , persName = persnames sr
         , persName_Pers = persnames_pers sr
