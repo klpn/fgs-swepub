@@ -30,20 +30,24 @@ data ModsRecord = ModsRecord {
         , identifier :: [ModsIdentifier]
         , subject :: [ModsSubject]
 }
+        deriving (Show, Generic)
 
 data ModsRecordInfo = ModsRecordInfo {
         recordContentSource :: T.Text
         , recordIdentifier :: T.Text
 }
+        deriving (Show, Generic)
 
 data ModsGenre = ModsGenre {
         genreTerm :: T.Text
 }
+        deriving (Show, Generic)
 
 data ModsOriginInfo = ModsOriginInfo {
         dateIssued :: Maybe Integer
         , publisher :: Maybe T.Text
 }
+        deriving (Show, Generic)
 
 data ModsLanguage = ModsLanguage {
         languageTerm :: T.Text
@@ -53,6 +57,7 @@ data ModsLanguage = ModsLanguage {
 data ModsTitleInfo = ModsTitleInfo {
         title :: T.Text
 }
+        deriving (Show, Generic)
 
 data ModsName = ModsName {
         nameType :: T.Text
@@ -60,16 +65,19 @@ data ModsName = ModsName {
         , nameRole :: [T.Text]
         , nameIdentifier :: [ModsIdentifier]
 }
+        deriving (Show, Generic)
 
 data ModsIdentifier = ModsIdentifier {
         identifierType :: T.Text
         , identifierValue :: T.Text
 }
+        deriving (Show, Generic)
 
 data ModsSubject = ModsSubject {
         languageTerm :: T.Text
         , topic :: T.Text
 }
+        deriving (Show, Generic)
 
 cfclasses :: M.Map T.Text T.Text
 cfclasses = M.fromList [
@@ -104,10 +112,10 @@ toCfResPubl mr = CerifRecord {
                 , cfResPublDate = T.pack $ show ((issdates $ originInfo mr) !! 0) ++ "-01-01"}]
         , resPublTitle = titles mr 
         , resPublAbstr = abstrs mr
-        , resPublKeyw = []
+        , resPublKeyw = keyws mr
         , resPubl_Class = rpclasses mr
-        , pers = []
-        , persName = []
+        , pers = persons mr
+        , persName = persnames mr
         , persName_Pers = []
         , pers_ResPubl = []
         , orgUnit = []
@@ -117,15 +125,27 @@ toCfResPubl mr = CerifRecord {
 titles :: ModsRecord -> [CfResPublTitle]
 titles mr = (\t -> toCfResPublTitle mr t) <$> (titleInfo mr)
 
+abstrs :: ModsRecord -> [CfResPublAbstr]
+abstrs mr = (\a -> toCfResPublAbstr mr a) <$> (abstract mr)
+
+rpclasses :: ModsRecord -> [CfResPubl_Class]
+rpclasses mr = (\c -> toCfResPubl_Class mr c) <$> (publclasses $ genre mr)
+
+keyws :: ModsRecord -> [CfResPublKeyw]
+keyws mr = (\s -> toCfResPublKeyw mr s) <$> (subject mr)
+
+persons :: ModsRecord -> [CfPers]
+persons mr = toCfPers <$> [n | n <- (name mr), (nameType n) == "personal"]
+
+persnames :: ModsRecord -> [CfPersName]
+persnames mr = toCfPersName <$> [n | n <- (name mr), (nameType n) == "personal"]
+
 toCfResPublTitle :: ModsRecord -> ModsTitleInfo -> CfResPublTitle
 toCfResPublTitle mr t =
         CfResPublTitle {cfResPublId = ri, cfLangCode = l, cfTrans = "o", cfTitle = title t}
                 where
                         ri = recordIdentifier $ recordInfo mr
                         l = (language mr !! 0) ^. #languageTerm
-
-abstrs :: ModsRecord -> [CfResPublAbstr]
-abstrs mr = (\a -> toCfResPublAbstr mr a) <$> (abstract mr)
 
 toCfResPublAbstr :: ModsRecord -> T.Text -> CfResPublAbstr
 toCfResPublAbstr mr a =
@@ -134,9 +154,6 @@ toCfResPublAbstr mr a =
                         ri = recordIdentifier $ recordInfo mr
                         l = (language mr !! 0) ^. #languageTerm
 
-
-rpclasses :: ModsRecord -> [CfResPubl_Class]
-rpclasses mr = (\c -> toCfResPubl_Class mr c) <$> (publclasses $ genre mr)
 
 toCfResPubl_Class :: ModsRecord -> T.Text -> CfResPubl_Class
 toCfResPubl_Class mr c =
@@ -147,3 +164,23 @@ toCfResPubl_Class mr c =
                         , cfStartDate = "1900-01-01T00:00:00"
                         , cfEndDate = "2099-12-31T00:00:00"
                 }
+
+toCfResPublKeyw :: ModsRecord -> ModsSubject -> CfResPublKeyw
+toCfResPublKeyw mr s =
+        CfResPublKeyw {cfResPublId = ri, cfLangCode = l, cfTrans = "o", cfKeyw = t}
+                where
+                        ri = recordIdentifier $ recordInfo mr
+                        l = s ^. #languageTerm
+                        t = s ^. #topic
+
+toCfPers :: ModsName -> CfPers
+toCfPers n = CfPers {cfPersId = identifierValue $ (n ^. #nameIdentifier) !! 0}
+
+toCfPersName :: ModsName -> CfPersName
+toCfPersName n = CfPersName {
+        cfPersNameId = T.concat [(identifierValue $ (n ^. #nameIdentifier) !! 0), "-N"]
+        , cfFamilyNames = T.intercalate " "
+                [identifierValue p | p <- (namePart n), (identifierType p) == "family"]
+        , cfFirstNames = T.intercalate " "
+                [identifierValue p | p <- (namePart n), (identifierType p) == "given"]
+}
