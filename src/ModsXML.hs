@@ -62,7 +62,7 @@ data ModsTitleInfo = ModsTitleInfo {
 data ModsName = ModsName {
         nameType :: T.Text
         , namePart :: [ModsIdentifier]
-        , nameRole :: [T.Text]
+        , nameRole :: [ModsRole]
         , nameIdentifier :: [ModsIdentifier]
 }
         deriving (Show, Generic)
@@ -76,6 +76,11 @@ data ModsIdentifier = ModsIdentifier {
 data ModsSubject = ModsSubject {
         languageTerm :: T.Text
         , topic :: T.Text
+}
+        deriving (Show, Generic)
+
+data ModsRole = ModsRole {
+        roleTerm :: T.Text
 }
         deriving (Show, Generic)
 
@@ -116,9 +121,9 @@ toCfResPubl mr = CerifRecord {
         , resPubl_Class = rpclasses mr
         , pers = persons mr
         , persName = persnames mr
-        , persName_Pers = []
-        , pers_ResPubl = []
-        , orgUnit = []
+        , persName_Pers = persnames_pers mr 
+        , pers_ResPubl = pers_respubl mr
+        , orgUnit = ous mr
         , orgUnitName = []
 }
 
@@ -140,6 +145,18 @@ persons mr = toCfPers <$> [n | n <- (name mr), (nameType n) == "personal"]
 persnames :: ModsRecord -> [CfPersName]
 persnames mr = toCfPersName <$> [n | n <- (name mr), (nameType n) == "personal"]
 
+persnames_pers :: ModsRecord -> [CfPersName_Pers]
+persnames_pers mr = toCfPersName_Pers <$> [n | n <- (name mr), (nameType n) == "personal"]
+
+pers_respubl :: ModsRecord -> [CfPers_ResPubl]
+pers_respubl mr = concat $ (\n -> pers_respublName mr n) <$> [n | n <- (name mr), (nameType n) == "personal"]
+
+pers_respublName :: ModsRecord -> ModsName -> [CfPers_ResPubl]
+pers_respublName mr n = (\r -> toCfPers_ResPubl mr n r) <$> (nameRole n)
+
+ous :: ModsRecord -> [CfOrgUnit]
+ous mr = toCfOrgUnit <$> [n | n <- (name mr), (nameType n) == "corporate"]
+
 toCfResPublTitle :: ModsRecord -> ModsTitleInfo -> CfResPublTitle
 toCfResPublTitle mr t =
         CfResPublTitle {cfResPublId = ri, cfLangCode = l, cfTrans = "o", cfTitle = title t}
@@ -160,7 +177,7 @@ toCfResPubl_Class mr c =
         CfResPubl_Class {
                         cfResPublId = recordIdentifier $ recordInfo mr
                         , cfClassId = c
-                        , cfClassSchemeId = "FGS_Swepub" 
+                        , cfClassSchemeId = "759af938-34ae-11e1-b86c-0800200c9a66" 
                         , cfStartDate = "1900-01-01T00:00:00"
                         , cfEndDate = "2099-12-31T00:00:00"
                 }
@@ -184,3 +201,26 @@ toCfPersName n = CfPersName {
         , cfFirstNames = T.intercalate " "
                 [identifierValue p | p <- (namePart n), (identifierType p) == "given"]
 }
+
+toCfPersName_Pers :: ModsName -> CfPersName_Pers
+toCfPersName_Pers n = CfPersName_Pers {
+        cfPersId = identifierValue $ (n ^. #nameIdentifier) !! 0
+        , cfPersNameId = T.concat [(identifierValue $ (n ^. #nameIdentifier) !! 0), "-N"]
+        , cfClassId = "ModsName"
+        , cfClassSchemeId = "759af938-34ae-11e1-b86c-0800200c9a66"
+        , cfStartDate = "1900-01-01T00:00:00"
+        , cfEndDate = "2099-12-31T00:00:00"
+}
+
+toCfPers_ResPubl :: ModsRecord -> ModsName -> ModsRole -> CfPers_ResPubl
+toCfPers_ResPubl mr n r = CfPers_ResPubl {
+        cfPersId = identifierValue $ (n ^. #nameIdentifier) !! 0
+        , cfResPublId = recordIdentifier $ recordInfo mr
+        , cfClassId = roleTerm r
+        , cfClassSchemeId = "759af938-34ae-11e1-b86c-0800200c9a66"
+        , cfStartDate = "1900-01-01T00:00:00"
+        , cfEndDate = "2099-12-31T00:00:00"
+}
+
+toCfOrgUnit :: ModsName -> CfOrgUnit
+toCfOrgUnit n = CfOrgUnit {cfOrgUnitId = identifierValue $ (n ^. #nameIdentifier) !! 0}
