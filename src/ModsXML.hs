@@ -61,6 +61,7 @@ data ModsTitleInfo = ModsTitleInfo {
 
 data ModsName = ModsName {
         nameType :: T.Text
+        , languageTerm :: T.Text
         , namePart :: [ModsIdentifier]
         , nameRole :: [ModsRole]
         , nameIdentifier :: [ModsIdentifier]
@@ -124,7 +125,7 @@ toCfResPubl mr = CerifRecord {
         , persName_Pers = persnames_pers mr 
         , pers_ResPubl = pers_respubl mr
         , orgUnit = ous mr
-        , orgUnitName = []
+        , orgUnitName = ounames mr
 }
 
 titles :: ModsRecord -> [CfResPublTitle]
@@ -156,6 +157,9 @@ pers_respublName mr n = (\r -> toCfPers_ResPubl mr n r) <$> (nameRole n)
 
 ous :: ModsRecord -> [CfOrgUnit]
 ous mr = toCfOrgUnit <$> [n | n <- (name mr), (nameType n) == "corporate"]
+
+ounames :: ModsRecord -> [CfOrgUnitName]
+ounames mr = toCfOrgUnitName <$> [n | n <- (name mr), (nameType n) == "corporate"]
 
 toCfResPublTitle :: ModsRecord -> ModsTitleInfo -> CfResPublTitle
 toCfResPublTitle mr t =
@@ -224,3 +228,11 @@ toCfPers_ResPubl mr n r = CfPers_ResPubl {
 
 toCfOrgUnit :: ModsName -> CfOrgUnit
 toCfOrgUnit n = CfOrgUnit {cfOrgUnitId = identifierValue $ (n ^. #nameIdentifier) !! 0}
+
+toCfOrgUnitName :: ModsName -> CfOrgUnitName
+toCfOrgUnitName n = CfOrgUnitName {
+        cfOrgUnitId = identifierValue $ (n ^. #nameIdentifier) !! 0
+        , cfLangCode = n ^. #languageTerm
+        , cfTrans = "o"
+        , cfName = identifierValue $ (n ^. #namePart) !! 0
+}
