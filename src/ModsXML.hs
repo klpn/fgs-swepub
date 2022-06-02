@@ -3,6 +3,7 @@
 module ModsXML where
 
 import           Cerif
+import           CerifXML (matchCNN)
 import           Conduit
 import           Control.Lens hiding (matching)
 import           Data.Generics.Labels
@@ -236,3 +237,46 @@ toCfOrgUnitName n = CfOrgUnitName {
         , cfTrans = "o"
         , cfName = identifierValue $ (n ^. #namePart) !! 0
 }
+
+parseModsRecord :: MonadThrow m => ConduitT X.Event o m (Maybe ModsRecord)
+parseModsRecord = tagIgnoreAttrs (matchCNN "recordInfo") $ do
+        recordInfo <- force "recordInfo missing" parseRecordInfo
+        genre <- many parseGenre
+        originInfo <- many parseOriginInfo
+        return
+                $ ModsRecord
+                        recordInfo
+                        genre
+                        originInfo
+                        []
+                        []
+                        []
+                        []
+                        []
+                        []
+
+parseRecordInfo :: MonadThrow m => ConduitT X.Event o m (Maybe ModsRecordInfo)
+parseRecordInfo = tagNoAttr (matchCNN "recordInfo") $ do
+        recordContentSource <- force "contentSource mssing" $ tagNoAttr (matchCNN "recordContentSource") content
+        recordIdentifier <- force "identifier missing" $ tagNoAttr (matchCNN "recordIdentifier") content
+        return
+                $ ModsRecordInfo
+                        recordContentSource
+                        recordIdentifier
+
+parseGenre :: MonadThrow m => ConduitT X.Event o m (Maybe ModsGenre)
+parseGenre = tagNoAttr (matchCNN "genre") $ do
+        genreTerm <- content
+        return
+                $ ModsGenre
+                        genreTerm
+
+parseOriginInfo :: MonadThrow m => ConduitT X.Event o m (Maybe ModsOriginInfo)
+parseOriginInfo = tagNoAttr (matchCNN "originInfo") $ do
+        dateIssued <- tagNoAttr (matchCNN "dateIssued") content
+        publisher <- tagNoAttr (matchCNN "publisher") content
+        return
+                $ ModsOriginInfo
+                        (read <$> (T.unpack <$> dateIssued))
+                        publisher
+
