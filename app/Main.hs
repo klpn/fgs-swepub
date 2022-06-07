@@ -7,7 +7,6 @@ import           CerifXML
 import           Conduit
 import           Data.Aeson
 import           Data.Either
-import           ModsXML
 import           System.Console.GetOpt
 import           System.Environment
 import           System.Exit
@@ -15,6 +14,7 @@ import           System.IO (hPutStrLn, stderr)
 import           Text.XML
 import qualified Slupub as SL
 import qualified Swepub as SW
+import qualified ModsXML as MX
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8 
 import qualified Data.Text.Lazy.IO as TIO
@@ -67,6 +67,14 @@ biblput "cerifxml" t = do
                 "cerifnat" -> putStrLn $ show cerif
                 "swepubjson" -> mapM_ L8.putStrLn (encode <$> (SW.toSwepubRecords cerif))
                 "swepubnat" -> putStrLn $ show (SW.toSwepubRecords cerif)
+                _ -> usage "unrecognized format"
+biblput "modsxml" t = do
+        modsinRaw <- L.getContents
+        mods <- runConduitRes $ XP.parseLBS XP.def modsinRaw .| XP.force "MODS missing" MX.parseModsRecord
+        case t of
+                "modsnat" -> putStrLn (show mods)
+                "cerifnat" -> putStrLn (show $ MX.toCfResPubl mods)
+                "cerifxml" ->  TIO.putStrLn (renderText def (toCerifXML [MX.toCfResPubl mods]))
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
 
