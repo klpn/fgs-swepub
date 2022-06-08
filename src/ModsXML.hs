@@ -5,7 +5,7 @@ module ModsXML where
 import           Cerif
 import           Conduit
 import           Control.Applicative ((<|>))
-import           Control.Lens hiding (matching)
+import           Control.Lens
 import           Data.Generics.Labels
 import           Data.List
 import           Data.Maybe
@@ -13,7 +13,6 @@ import           GHC.Generics
 import           Text.Hamlet.XML
 import           Text.XML
 import           Text.XML.Cursor ((&/), ($/), ($//), (>=>))
-import           Text.XML.Stream.Parse
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.XML.Types as X
@@ -24,9 +23,6 @@ modsns = "http://www.loc.gov/mods/v3"
 
 modsnsName ::  String -> Name
 modsnsName s = Name (T.pack s) (Just modsns) Nothing
-
-matchMNN :: String -> NameMatcher Name
-matchMNN = matching . (==) . modsnsName
 
 data ModsRecord = ModsRecord {
         recordInfo :: ModsRecordInfo
@@ -246,152 +242,77 @@ toCfOrgUnitName n = CfOrgUnitName {
         , cfName = identifierValue $ (n ^. #namePart) !! 0
 }
 
-parseModsRecordC :: C.Cursor -> ModsRecord
-parseModsRecordC c = do
-        let recordInfo = c $/ C.element (modsnsName "recordInfo") >=> parseRecordInfoC
+parseModsRecord :: C.Cursor -> ModsRecord
+parseModsRecord c = do
+        let recordInfo = c $/ C.element (modsnsName "recordInfo") >=> parseRecordInfo
         let genre = c $/ C.element (modsnsName "genre") &/ C.content
-        let originInfo = c $/ C.element (modsnsName "originInfo") >=> parseOriginInfoC
-        let language = c $/ C.element (modsnsName "language") >=> parseLanguageC
-        let titleInfo = c $/ C.element (modsnsName "titleInfo") >=> parseTitleInfoC
+        let originInfo = c $/ C.element (modsnsName "originInfo") >=> parseOriginInfo
+        let language = c $/ C.element (modsnsName "language") >=> parseLanguage
+        let titleInfo = c $/ C.element (modsnsName "titleInfo") >=> parseTitleInfo
+        let name = c $/ C.element (modsnsName "name") >=> parseName
         let abstract = c $/ C.element (modsnsName "abstract") &/ C.content
-        let identifier = c $/ C.element (modsnsName "identifier") >=> parseIdentifierC 
-        let subject = c $/ C.element (modsnsName "subject") >=> parseSubjectC
+        let identifier = c $/ C.element (modsnsName "identifier") >=> parseIdentifier
+        let subject = c $/ C.element (modsnsName "subject") >=> parseSubject
         ModsRecord
                 (recordInfo !! 0)
                 (ModsGenre <$> genre)
                 originInfo
                 language
                 titleInfo
-                [] abstract identifier subject
+                name
+                abstract
+                identifier
+                subject
 
-parseRecordInfoC :: C.Cursor -> [ModsRecordInfo]
-parseRecordInfoC c = do
+parseRecordInfo :: C.Cursor -> [ModsRecordInfo]
+parseRecordInfo c = do
         let recordContentSource = c $/ C.element (modsnsName "recordContentSource") &/ C.content
         let recordIdentifier = c $/ C.element (modsnsName "recordIdentifier") &/ C.content
         [ModsRecordInfo (recordContentSource !! 0) (recordIdentifier !! 0)]
 
-parseOriginInfoC :: C.Cursor -> [ModsOriginInfo]
-parseOriginInfoC c = do
+parseOriginInfo :: C.Cursor -> [ModsOriginInfo]
+parseOriginInfo c = do
         let dateIssued = c $/ C.element (modsnsName "dateIssued") &/ C.content
         let publisher = c $/ C.element (modsnsName "publisher") &/ C.content
         [ModsOriginInfo (read <$> T.unpack <$> (dateIssued ^? element 0)) (publisher ^? element 0)]
 
-parseLanguageC :: C.Cursor -> [ModsLanguage]
-parseLanguageC c = do
+parseLanguage :: C.Cursor -> [ModsLanguage]
+parseLanguage c = do
         let languageTerm = c $/ C.element (modsnsName "languageTerm") &/ C.content
         [ModsLanguage (languageTerm !! 0)]
 
-parseTitleInfoC :: C.Cursor -> [ModsTitleInfo]
-parseTitleInfoC c = do
+parseTitleInfo :: C.Cursor -> [ModsTitleInfo]
+parseTitleInfo c = do
         let title = c $/ C.element (modsnsName "title") &/ C.content
         [ModsTitleInfo (title !! 0)]
 
-parseSubjectC :: C.Cursor -> [ModsSubject]
-parseSubjectC c = do
+parseName :: C.Cursor -> [ModsName]
+parseName c = do
+        let nameType = C.attribute "type" c
+        let namePart = c $/ C.element (modsnsName "namePart") >=> parseNamePart
+        let nameRole = c $/ C.element (modsnsName "role") >=> parseRole
+        let nameIdentifier = c $/ C.element (modsnsName "nameIdentifier") >=> parseIdentifier
+        [ModsName (nameType !! 0)  "swe" namePart nameRole nameIdentifier]
+
+parseNamePart :: C.Cursor -> [ModsIdentifier]
+parseNamePart c = do
+        let namePartType = C.attribute "type" c
+        let namePartValue = c $// C.content
+        [ModsIdentifier (fromMaybe "unspec" $ namePartType ^? element 0) (namePartValue !! 0)]
+
+parseRole :: C.Cursor -> [ModsRole]
+parseRole c = do
+        let roleTerm = c $/ C.element (modsnsName "roleTerm") &/ C.content
+        [ModsRole (roleTerm !! 0)]
+
+parseSubject :: C.Cursor -> [ModsSubject]
+parseSubject c = do
         let languageTerm = C.attribute "lang" c
         let topic = c $/ C.element (modsnsName "topic") &/ C.content
         [ModsSubject (languageTerm !! 0) (topic !! 0)]
 
-parseIdentifierC :: C.Cursor -> [ModsIdentifier]
-parseIdentifierC c = do
+parseIdentifier :: C.Cursor -> [ModsIdentifier]
+parseIdentifier c = do
         let identifierType = C.attribute "type" c
         let identifierValue = c $// C.content
         [ModsIdentifier (identifierType !! 0) (identifierValue !! 0)]
-
-parseModsRecord :: MonadThrow m => ConduitT X.Event o m (Maybe ModsRecord)
-parseModsRecord = tagIgnoreAttrs (matchMNN "mods") $ do
-        recordInfo <- force "recordInfo missing" parseRecordInfo
-        genre <- many parseGenre
-        originInfo <- many parseOriginInfo
-        language <- many parseLanguage
-        titleInfo <- many parseTitleInfo
-        name <- many parseName
-        abstract <- many $ tagNoAttr (matchMNN "abstract") content
-        identifier <- many parseIdentifier
-        subject <- many parseSubject
-        return
-                $ ModsRecord
-                        recordInfo
-                        genre
-                        originInfo
-                        language
-                        titleInfo
-                        name
-                        abstract
-                        identifier
-                        subject
-
-parseRecordInfo :: MonadThrow m => ConduitT X.Event o m (Maybe ModsRecordInfo)
-parseRecordInfo = tagNoAttr (matchMNN "recordInfo") $ do
-        recordContentSource <- force "contentSource mssing" $ tagNoAttr (matchMNN "recordContentSource") content
-        recordIdentifier <- force "identifier missing" $ tagNoAttr (matchMNN "recordIdentifier") content
-        return
-                $ ModsRecordInfo
-                        recordContentSource
-                        recordIdentifier
-
-parseGenre :: MonadThrow m => ConduitT X.Event o m (Maybe ModsGenre)
-parseGenre = tagIgnoreAttrs (matchMNN "genre") $ do
-        genreTerm <- content
-        return
-                $ ModsGenre
-                        genreTerm
-
-parseOriginInfo :: MonadThrow m => ConduitT X.Event o m (Maybe ModsOriginInfo)
-parseOriginInfo = tagNoAttr (matchMNN "originInfo") $ do
-        dateIssued <- tagNoAttr (matchMNN "dateIssued") content
-        publisher <- tagNoAttr (matchMNN "publisher") content
-        return
-                $ ModsOriginInfo
-                        (read <$> (T.unpack <$> dateIssued))
-                        publisher
-
-parseLanguage :: MonadThrow m => ConduitT X.Event o m (Maybe ModsLanguage)
-parseLanguage = tagNoAttr (matchMNN "language") $ do
-        languageTerm <- force  "languageTerm missing" $ tagIgnoreAttrs(matchMNN "languageTerm") content
-        return
-                $ ModsLanguage
-                        languageTerm
-
-parseTitleInfo :: MonadThrow m => ConduitT X.Event o m (Maybe ModsTitleInfo)
-parseTitleInfo = tagNoAttr (matchMNN "titleInfo") $ do
-        title <- force "title missing" $ tagNoAttr (matchMNN "title") content
-        return
-                $ ModsTitleInfo
-                         title
-
-parseIdentifier :: MonadThrow m => ConduitT X.Event o m (Maybe ModsIdentifier)
-parseIdentifier = tag' (matchMNN "identifier" <|> matchMNN "namePart"<|> matchMNN "nameIdentifier")  (attr "type") $ \identifierType -> do
-        identifierValue <- content
-        return
-                $ ModsIdentifier
-                         (fromMaybe "empty" identifierType)
-                         identifierValue
-
-parseName :: MonadThrow m => ConduitT X.Event o m (Maybe ModsName)
-parseName = tag' (matchMNN "name")  (requireAttr "type" <* ignoreAttrs) $ \nameType -> do
-        namePart <- many parseIdentifier
-        nameRole <- many parseRole
-        nameIdentifier <- many' parseIdentifier
-        return
-                $ ModsName
-                         nameType
-                         "swe"
-                         namePart
-                         nameRole
-                         nameIdentifier
-
-parseRole :: MonadThrow m => ConduitT X.Event o m (Maybe ModsRole)
-parseRole= tagNoAttr (matchMNN "role") $ do
-        roleTerm <- force "roleTerm missing" $ tagIgnoreAttrs (matchMNN "roleTerm") content
-        return
-                $ ModsRole
-                         roleTerm
-
-parseSubject :: MonadThrow m => ConduitT X.Event o m (Maybe ModsSubject)
-parseSubject = tag' (matchMNN "subject")  (requireAttr "lang" <* ignoreAttrs) $ \languageTerm -> do
-        topic <- force "topic missing" $ tagNoAttr (matchMNN "topic") content
-        return
-                $ ModsSubject
-                         languageTerm
-                         topic

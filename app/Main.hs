@@ -72,18 +72,12 @@ biblput "cerifxml" t = do
                 _ -> usage "unrecognized format"
 biblput "modsxml" t = do
         modsinRaw <- L.getContents
-        mods <- runConduitRes $ XP.parseLBS XP.def modsinRaw .| XP.force "MODS missing" MX.parseModsRecord
+        let modsin = parseLBS_ def modsinRaw
+        let mods = MX.parseModsRecord (C.fromDocument modsin)
         case t of
                 "modsnat" -> putStrLn (show mods)
                 "cerifnat" -> putStrLn (show $ MX.toCfResPubl mods)
                 "cerifxml" ->  TIO.putStrLn (renderText def (toCerifXML [MX.toCfResPubl mods]))
-                _ -> usage "unrecognized format"
-biblput "modsxmlc" t = do
-        modsinRaw <- L.getContents
-        let modsin = parseLBS_ def modsinRaw
-        let mods = MX.parseModsRecordC (C.fromDocument modsin)
-        case t of
-                "modsnat" -> putStrLn (show mods)
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
 
