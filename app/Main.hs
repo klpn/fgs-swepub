@@ -12,12 +12,14 @@ import           System.Environment
 import           System.Exit
 import           System.IO (hPutStrLn, stderr)
 import           Text.XML
+import           Text.XML.Cursor ((&/), ($/), (>=>))
 import qualified Slupub as SL
 import qualified Swepub as SW
 import qualified ModsXML as MX
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8 
 import qualified Data.Text.Lazy.IO as TIO
+import qualified Text.XML.Cursor as C
 import qualified Text.XML.Stream.Parse as XP
 
 data Flag = FromFormat String | ToFormat String
@@ -75,6 +77,13 @@ biblput "modsxml" t = do
                 "modsnat" -> putStrLn (show mods)
                 "cerifnat" -> putStrLn (show $ MX.toCfResPubl mods)
                 "cerifxml" ->  TIO.putStrLn (renderText def (toCerifXML [MX.toCfResPubl mods]))
+                _ -> usage "unrecognized format"
+biblput "modsxmlc" t = do
+        modsinRaw <- L.getContents
+        let modsin = parseLBS_ def modsinRaw
+        let mods = MX.parseModsRecordC (C.fromDocument modsin)
+        case t of
+                "modsnat" -> putStrLn (show mods)
                 _ -> usage "unrecognized format"
 biblput _ _ = usage "unrecognized format"
 

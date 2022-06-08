@@ -12,10 +12,12 @@ import           Data.Maybe
 import           GHC.Generics
 import           Text.Hamlet.XML
 import           Text.XML
+import           Text.XML.Cursor ((&/), ($/), ($//), (>=>))
 import           Text.XML.Stream.Parse
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.XML.Types as X
+import qualified Text.XML.Cursor as C
 
 modsns :: T.Text
 modsns = "http://www.loc.gov/mods/v3"
@@ -243,6 +245,58 @@ toCfOrgUnitName n = CfOrgUnitName {
         , cfTrans = "o"
         , cfName = identifierValue $ (n ^. #namePart) !! 0
 }
+
+parseModsRecordC :: C.Cursor -> ModsRecord
+parseModsRecordC c = do
+        let recordInfo = c $/ C.element (modsnsName "recordInfo") >=> parseRecordInfoC
+        let genre = c $/ C.element (modsnsName "genre") &/ C.content
+        let originInfo = c $/ C.element (modsnsName "originInfo") >=> parseOriginInfoC
+        let language = c $/ C.element (modsnsName "language") >=> parseLanguageC
+        let titleInfo = c $/ C.element (modsnsName "titleInfo") >=> parseTitleInfoC
+        let abstract = c $/ C.element (modsnsName "abstract") &/ C.content
+        let identifier = c $/ C.element (modsnsName "identifier") >=> parseIdentifierC 
+        let subject = c $/ C.element (modsnsName "subject") >=> parseSubjectC
+        ModsRecord
+                (recordInfo !! 0)
+                (ModsGenre <$> genre)
+                originInfo
+                language
+                titleInfo
+                [] abstract identifier subject
+
+parseRecordInfoC :: C.Cursor -> [ModsRecordInfo]
+parseRecordInfoC c = do
+        let recordContentSource = c $/ C.element (modsnsName "recordContentSource") &/ C.content
+        let recordIdentifier = c $/ C.element (modsnsName "recordIdentifier") &/ C.content
+        [ModsRecordInfo (recordContentSource !! 0) (recordIdentifier !! 0)]
+
+parseOriginInfoC :: C.Cursor -> [ModsOriginInfo]
+parseOriginInfoC c = do
+        let dateIssued = c $/ C.element (modsnsName "dateIssued") &/ C.content
+        let publisher = c $/ C.element (modsnsName "publisher") &/ C.content
+        [ModsOriginInfo (read <$> T.unpack <$> (dateIssued ^? element 0)) (publisher ^? element 0)]
+
+parseLanguageC :: C.Cursor -> [ModsLanguage]
+parseLanguageC c = do
+        let languageTerm = c $/ C.element (modsnsName "languageTerm") &/ C.content
+        [ModsLanguage (languageTerm !! 0)]
+
+parseTitleInfoC :: C.Cursor -> [ModsTitleInfo]
+parseTitleInfoC c = do
+        let title = c $/ C.element (modsnsName "title") &/ C.content
+        [ModsTitleInfo (title !! 0)]
+
+parseSubjectC :: C.Cursor -> [ModsSubject]
+parseSubjectC c = do
+        let languageTerm = C.attribute "lang" c
+        let topic = c $/ C.element (modsnsName "topic") &/ C.content
+        [ModsSubject (languageTerm !! 0) (topic !! 0)]
+
+parseIdentifierC :: C.Cursor -> [ModsIdentifier]
+parseIdentifierC c = do
+        let identifierType = C.attribute "type" c
+        let identifierValue = c $// C.content
+        [ModsIdentifier (identifierType !! 0) (identifierValue !! 0)]
 
 parseModsRecord :: MonadThrow m => ConduitT X.Event o m (Maybe ModsRecord)
 parseModsRecord = tagIgnoreAttrs (matchMNN "mods") $ do
