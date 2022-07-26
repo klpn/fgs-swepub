@@ -42,10 +42,7 @@ biblput "slupubjson" t = do
         case biblo of
                 Left err -> hPutStrLn stderr err
                 Right biblrec ->
-                        case t of
-                                "cerifnat" -> putStrLn (show $ SL.toCfResPubl biblrec)
-                                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML [SL.toCfResPubl biblrec]))
-                                _ -> usage "unrecognized format"
+                        cerifout [SL.toCfResPubl biblrec] t
 biblput "swepubjson" t = do
         biblinRaw <- L.getContents
         let biblin = init $ L.split 10 biblinRaw
@@ -57,29 +54,24 @@ biblput "swepubjson" t = do
                         hPutStrLn stderr $ show biblerr
                 else do
                         return ()
-        case t of
-                "cerifnat" -> putStrLn (show $ SW.toCfResPubl <$> biblrec)
-                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML (SW.toCfResPubl <$> biblrec)))
-                "swepubnat" -> putStrLn (show biblrec)
-                _ -> usage "unrecognized format"
+        cerifout (SW.toCfResPubl <$> biblrec) t
 biblput "cerifxml" t = do
         cerifinRaw <- L.getContents
         cerif <- runConduitRes $ XP.parseLBS XP.def cerifinRaw .| XP.force "CERIF missing" parseCerifRecord
-        case t of
-                "cerifnat" -> putStrLn $ show cerif
-                "swepubjson" -> mapM_ L8.putStrLn (encode <$> (SW.toSwepubRecords cerif))
-                "swepubnat" -> putStrLn $ show (SW.toSwepubRecords cerif)
-                _ -> usage "unrecognized format"
+        cerifout [cerif] t
 biblput "modsxml" t = do
         modsinRaw <- L.getContents
         let modsin = parseLBS_ def modsinRaw
         let mods = MX.parseModsRecord (C.fromDocument modsin)
-        case t of
-                "modsnat" -> putStrLn (show mods)
-                "cerifnat" -> putStrLn (show $ MX.toCfResPubl mods)
-                "cerifxml" ->  TIO.putStrLn (renderText def (toCerifXML [MX.toCfResPubl mods]))
-                _ -> usage "unrecognized format"
+        cerifout [MX.toCfResPubl mods] t
 biblput _ _ = usage "unrecognized format"
+
+cerifout :: [CerifRecord] -> String -> IO ()
+cerifout crs t = do
+        case t of
+                "cerifnat" -> putStrLn (show crs)
+                "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML crs))
+                _ -> usage "unrecognized format"
 
 main :: IO ()
 main = do 
