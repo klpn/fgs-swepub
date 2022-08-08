@@ -71,6 +71,7 @@ cerifout crs t = do
         case t of
                 "cerifnat" -> putStrLn (show crs)
                 "cerifxml" -> TIO.putStrLn (renderText def (toCerifXML crs))
+                "modsxml" ->  TIO.putStrLn (renderText def (MX.toModsXML $ crs !! 0))
                 _ -> usage "unrecognized format"
 
 main :: IO ()

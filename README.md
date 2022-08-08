@@ -18,3 +18,5 @@ Pipe into [xmllint](http://xmlsoft.org/) for indentation.
 ```
 stack exec fgs-swepub -- -f swepubjson -t cerifxml < test/Slupub_82412f.mods.xml | xmllint --format -
 ```
+
+The output should be identical to the file `test/Slupub_82412f.cerif.xml`.

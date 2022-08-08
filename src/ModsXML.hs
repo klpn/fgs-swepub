@@ -24,6 +24,54 @@ modsns = "http://www.loc.gov/mods/v3"
 modsnsName ::  String -> Name
 modsnsName s = Name (T.pack s) (Just modsns) Nothing
 
+modsattrs ::  M.Map Name T.Text
+modsattrs  = M.fromList [
+        ("xmlns", modsns)
+        , ("xsi:schemaLocation", T.pack $ "http://www.loc.gov/mods/v3 " ++
+                "http://www.loc.gov/standards/mods/v3/mods-3-7.xsd")
+        , ("xmlns:xsi", T.pack "http://www.w3.org/2001/XMLSchema-instance")
+        , ("xmlns:xlink", T.pack "http://www.w3.org/1999/xlink")
+        , ("version", T.pack "3.7")]
+
+toModsXML :: CerifRecord -> Document
+toModsXML cr =  Document (Prologue [] Nothing []) modsroot []
+        where
+                modsroot = Element "mods" modsattrs [xml|
+^{toModsXMLRecordInfo crpu}
+$forall crt <- crts
+        ^{toModsXMLTitleInfo crt}
+$forall crab <- crabs
+        ^{toModsXMLAbstract crab}
+|]
+                crpu = (cr ^. #resPubl) !! 0
+                crts = (cr ^. #resPublTitle)
+                crabs = (cr ^. #resPublAbstr)
+
+toModsXMLRecordInfo :: CfResPubl -> [Node]
+toModsXMLRecordInfo crpu = [xml|
+<recordInfo>
+        <recordContentSource>#{source}
+        <recordIdentifier>#{publId}
+|]
+        where
+                source =  crpu ^. #cfResPublId
+                publId = crpu ^. #cfResPublId
+
+toModsXMLTitleInfo :: CfResPublTitle -> [Node]
+toModsXMLTitleInfo crt =  [xml|
+<titleInfo>
+        <title>#{title}
+|]
+        where
+                title = crt ^. #cfTitle
+
+toModsXMLAbstract :: CfResPublAbstr -> [Node]
+toModsXMLAbstract crab =  [xml|
+<abstract>#{abstr}
+|]
+        where
+                abstr = crab ^. #cfAbstr
+
 data ModsRecord = ModsRecord {
         recordInfo :: ModsRecordInfo
         , genre :: [ModsGenre]
