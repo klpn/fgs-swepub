@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<mods xmlns="http://www.loc.gov/mods/v3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" version="3.7" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-7.xsd">
+  <recordInfo>
+    <recordContentSource>slu</recordContentSource>
+    <recordIdentifier>http://www.slu.se/subweb/bibliotek/slupub/publ/?publ_id=82412</recordIdentifier>
+  </recordInfo>
+  <genre authority="kb.se" type="outputType">conference/other</genre>
+  <genre authority="svep" type="contentType">ref</genre>
+  <originInfo>
+    <dateIssued>2017</dateIssued>
+  </originInfo>
+  <language>
+    <languageTerm type="code" authority="iso639-2b">eng</languageTerm>
+  </language>
+  <titleInfo>
+    <title>On representing affiliations  in the CERIF model</title>
+  </titleInfo>
+  <name type="personal" authority="slu">
+    <namePart type="given">Alejandro</namePart>
+    <namePart type="family">Engelmann</namePart>
+    <role>
+      <roleTerm type="code" authority="marcrelator">aut</roleTerm>
+    </role>
+    <nameIdentifier type="orcid">0000-0001-9355-7761</nameIdentifier>
+    <nameIdentifier type="slu">46820</nameIdentifier>
+    <affiliation lang="swe" authority="kb.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="slu.se">Sveriges lantbruksuniversitet</affiliation>
+    <affiliation lang="eng" authority="kb.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="slu.se">Swedish University of Agricultural Sciences</affiliation>
+    <affiliation lang="swe" authority="slu.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="http://www.slu.se/subweb/bibliotek/slupub/orga/?orga_id=113240">Bibliotek</affiliation>
+    <affiliation lang="eng" authority="slu.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="http://www.slu.se/subweb/bibliotek/slupub/orga/?orga_id=113240">Library</affiliation>
+  </name>
+  <name type="personal" authority="slu">
+    <namePart type="given">Christer</namePart>
+    <namePart type="family">Enkvist</namePart>
+    <role>
+      <roleTerm type="code" authority="marcrelator">aut</roleTerm>
+    </role>
+    <nameIdentifier type="orcid">0000-0002-3853-912X</nameIdentifier>
+    <nameIdentifier type="slu">110133</nameIdentifier>
+    <affiliation lang="swe" authority="kb.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="slu.se">Sveriges lantbruksuniversitet</affiliation>
+    <affiliation lang="eng" authority="kb.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="slu.se">Swedish University of Agricultural Sciences</affiliation>
+    <affiliation lang="swe" authority="slu.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="http://www.slu.se/subweb/bibliotek/slupub/orga/?orga_id=113240">Bibliotek</affiliation>
+    <affiliation lang="eng" authority="slu.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="http://www.slu.se/subweb/bibliotek/slupub/orga/?orga_id=113240">Library</affiliation>
+  </name>
+  <name type="personal" authority="slu">
+    <namePart type="given">Carl-Johan</namePart>
+    <namePart type="family">Syr&#xE9;n</namePart>
+    <role>
+      <roleTerm type="code" authority="marcrelator">aut</roleTerm>
+    </role>
+    <nameIdentifier type="orcid">0000-0002-7996-9687</nameIdentifier>
+    <nameIdentifier type="slu">47779</nameIdentifier>
+    <affiliation lang="swe" authority="kb.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="slu.se">Sveriges lantbruksuniversitet</affiliation>
+    <affiliation lang="eng" authority="kb.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="slu.se">Swedish University of Agricultural Sciences</affiliation>
+    <affiliation lang="swe" authority="slu.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="http://www.slu.se/subweb/bibliotek/slupub/orga/?orga_id=113240">Bibliotek</affiliation>
+    <affiliation lang="eng" authority="slu.se" xsi:type="stringPlusLanguagePlusAuthority" valueURI="http://www.slu.se/subweb/bibliotek/slupub/orga/?orga_id=113240">Library</affiliation>
+  </name>
+  <name type="corporate" authority="slu" lang="swe" xlink:href="http://www.slu.se">
+    <namePart>Sveriges lantbruksuniversitet</namePart>
+    <role>
+      <roleTerm type="code" authority="marcrelator">org</roleTerm>
+    </role>
+  </name>
+  <note type="creatorCount">3</note>
+  <abstract>&lt;p&gt;In most publications each author has one or many affiliations. This affiliation, or affiliations, is the one relevant for the publication at hand. In CERIF authors can be related to publications, and authors to affiliations thereby creating a relation between a publication and affiliation(s). However, if an author has multiple affiliations, CERIF cannot specify which of these that is relevant for a specific publication.In the proprietary CRIS system Converis the affiliation problem is solved by the using entities called "business cards".&#xA0;The "business card" is an entity which connects to a person and an organisation unit and this entity can thereafter be connected to the publication providing a correct person-organisation-publication relationship. We propose to model this entity as a properly classified cfPerson in the CERIF model. This entity can be referred to as business card, affiliated person, personality or avatar. The connection between the "real person" and the "affiliated person" is a cfPers_Pers entry representing the "has business card" relation.&#xA0; This model is used by SLU to transfer Converis data to a CERIF model without losing any information about the connection between publications, authors and organisations.&#xA0;Result entities are related to the "business cards" in the standard CERIF way. Result entities are related to the organisation units through this "affiliated persons", but for backwards compatibility a direct relation can also be added to the model. The use of "business cards" rather than "real persons" is in most cases more flexible as well as granular since it not only enables tracking of name changes and pseudonyms but can also be used when describing project members or even collaborations. However, when a reference should be associated with the unique real person, e.g. ORCID, then the "real" cfPerson should be used and not a "business card". (C) 2017 The Authors. Published by Elsevier B.V. This is an open access article under the CC BY -NC -ND license (http://creativecommons.org/licenses/by-nc-nd/4.0/).&lt;/p&gt;</abstract>
+  <identifier type="uri">http://www.slu.se/subweb/bibliotek/slupub/publ/?publ_id=82412</identifier>
+  <identifier type="doi">10.1016/j.procs.2017.03.025</identifier>
+  <identifier type="isi">000398828200037</identifier>
+  <relatedItem type="host">
+    <titleInfo>
+      <title>Procedia Computer Science</title>
+    </titleInfo>
+    <identifier type="issn">1877-0509</identifier>
+    <part>
+      <detail type="volume">
+        <number>106</number>
+      </detail>
+      <extent>
+        <start>268</start>
+        <end>275</end>
+      </extent>
+    </part>
+  </relatedItem>
+  <originInfo>
+    <publisher>Elsevier: Creative Commons Attribution Non-Commercial No-Derivatives License</publisher>
+  </originInfo>
+  <subject lang="eng" authority="uka.se" xlink:href="10201">
+    <topic>Computer Science</topic>
+  </subject>
+  <subject lang="swe" authority="uka.se" xlink:href="10201">
+    <topic>Datavetenskap (datalogi)</topic>
+  </subject>
+</mods>
