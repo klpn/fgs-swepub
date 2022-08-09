@@ -42,20 +42,32 @@ $forall crt <- crts
         ^{toModsXMLTitleInfo crt}
 $forall crab <- crabs
         ^{toModsXMLAbstract crab}
+$forall crkeyw <- crkeyws
+        ^{toModsXMLSubject crkeyw}
+$forall crp <- crps
+        ^{toModsXMLPers crp cr}
+$forall crou <- crous
+        ^{toModsXMLCorporate crou}
 |]
                 crpu = (cr ^. #resPubl) !! 0
-                crts = (cr ^. #resPublTitle)
-                crabs = (cr ^. #resPublAbstr)
+                crts = cr ^. #resPublTitle
+                crabs = cr ^. #resPublAbstr
+                crkeyws = cr ^. #resPublKeyw
+                crps = cr ^. #pers
+                crous = cr ^. #orgUnit
 
 toModsXMLRecordInfo :: CfResPubl -> [Node]
 toModsXMLRecordInfo crpu = [xml|
 <recordInfo>
         <recordContentSource>#{source}
         <recordIdentifier>#{publId}
+<originInfo>
+        <dateIssued>#{publDate}
 |]
         where
-                source =  crpu ^. #cfResPublId
+                source = crpu ^. #cfResPublId
                 publId = crpu ^. #cfResPublId
+                publDate = crpu ^. #cfResPublDate
 
 toModsXMLTitleInfo :: CfResPublTitle -> [Node]
 toModsXMLTitleInfo crt =  [xml|
@@ -71,6 +83,60 @@ toModsXMLAbstract crab =  [xml|
 |]
         where
                 abstr = crab ^. #cfAbstr
+
+toModsXMLSubject :: CfResPublKeyw -> [Node]
+toModsXMLSubject crkeyw = [xml|
+<subject lang=#{langCode}>
+        <topic>#{title}
+|]
+        where
+                title = crkeyw ^. #cfKeyw
+                langCode = crkeyw ^. #cfLangCode
+
+toModsXMLPers :: CfPers -> CerifRecord -> [Node]
+toModsXMLPers crp cr = [xml|
+<name type="personal">
+        $forall crpn <- crpns
+                ^{toModsXMLPersName crpn}
+        <nameIdentifier type="orcid">#{persId}
+        $forall crprp <- crprps
+                ^{toModsXMLPers_ResPubl crprp}
+|]
+        where
+                crpns = crpnames (crp ^. #cfPersId) cr
+                persId = crp ^. #cfPersId
+                crprps = [crprp | crprp <- cr ^. #pers_ResPubl,
+                        crprp ^. #cfPersId == crp ^. #cfPersId]
+
+toModsXMLPersName :: CfPersName -> [Node]
+toModsXMLPersName crpn = [xml|
+<namePart type="given">#{given}
+<namePart type="family">#{family}
+|]
+        where
+                given = crpn ^. #cfFirstNames
+                family = crpn ^. #cfFamilyNames
+
+crpnames :: T.Text -> CerifRecord -> [CfPersName]
+crpnames crpid cr = [crpn | crpn <- cr ^. #persName,
+        length [crpnp | crpnp <- cr ^. #persName_Pers,
+                crpnp ^. #cfPersId == crpid && crpnp ^. #cfPersNameId == crpn ^. #cfPersNameId] > 0]
+
+toModsXMLPers_ResPubl :: CfPers_ResPubl -> [Node]
+toModsXMLPers_ResPubl crprp = [xml|
+<role>
+        <roleTerm  type="code" authority="marcrelator">#{classId}
+|]
+        where
+                classId = crprp ^. #cfClassId
+
+toModsXMLCorporate :: CfOrgUnit -> [Node]
+toModsXMLCorporate crou = [xml|
+<name type="corporate">
+        <namePart>#{orgUnitId}
+|]
+        where
+                orgUnitId = crou ^. #cfOrgUnitId
 
 data ModsRecord = ModsRecord {
         recordInfo :: ModsRecordInfo
