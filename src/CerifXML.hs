@@ -9,19 +9,17 @@ import           Data.Generics.Labels
 import           Data.List
 import           Text.Hamlet.XML
 import           Text.XML
-import           Text.XML.Stream.Parse
+import           Text.XML.Cursor ((&/), ($/), ($//), (>=>))
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 import qualified Data.XML.Types as X
+import qualified Text.XML.Cursor as C
 
 cerifns :: T.Text
 cerifns = "urn:xmlns:org:eurocris:cerif-1.6-2"
 
 cerifnsName :: String -> Name
 cerifnsName s = Name (T.pack s) (Just cerifns) Nothing
-
-matchCNN :: String -> NameMatcher Name
-matchCNN = matching . (==) . cerifnsName
 
 cerifattrs :: M.Map Name T.Text
 cerifattrs = M.fromList [
@@ -190,169 +188,120 @@ toCerifXMLOrgUnitName oun = [xml|
                 langCode = oun ^. #cfLangCode
                 trans = oun ^. #cfTrans
 
+parseCerifRecord :: C.Cursor -> CerifRecord
+parseCerifRecord c = do
+        let resPubl =  c $/ C.element (cerifnsName "cfResPubl") >=> parseCfResPubl
+        let resPublTitle = c $/ C.element (cerifnsName "cfResPublTitle") >=> parseCfResPublTitle
+        let resPublAbstr = c $/ C.element (cerifnsName "cfResPublAbstr") >=> parseCfResPublAbstr
+        let resPublKeyw = c $/ C.element (cerifnsName "cfResPublKeyw") >=> parseCfResPublKeyw
+        let resPubl_Class = c $/ C.element (cerifnsName "cfResPublClass") >=> parseCfResPubl_Class
+        let pers = c $/ C.element (cerifnsName "cfPers") >=> parseCfPers
+        let persName = c $/ C.element (cerifnsName "cfPersName") >=> parseCfPersName
+        let persName_Pers = c $/ C.element (cerifnsName "cfPersName_Pers") >=> parseCfPersName_Pers
+        let pers_ResPubl = c $/ C.element (cerifnsName "cfPers_ResPubl") >=> parseCfPers_ResPubl
+        let orgUnit = c $/ C.element (cerifnsName "cfOrgUnit") >=> parseCfOrgUnit
+        let orgUnitName = c $/ C.element (cerifnsName "cfOrgUnitName") >=> parseCfOrgUnitName
+        CerifRecord
+                resPubl
+                resPublTitle
+                resPublAbstr
+                resPublKeyw
+                resPubl_Class
+                pers
+                persName
+                persName_Pers
+                pers_ResPubl
+                orgUnit
+                orgUnitName
 
-parseCerifRecord :: MonadThrow m => ConduitT X.Event o m (Maybe CerifRecord)
-parseCerifRecord = tagIgnoreAttrs (matchCNN "CERIF") $ do
-        resPubl <- many parseCfResPubl
-        resPublTitle <- many parseCfResPublTitle
-        resPublAbstr <- many parseCfResPublAbstr
-        resPublKeyw <- many parseCfResPublKeyw
-        resPubl_Class <- many parseCfResPubl_Class
-        pers <- many parseCfPers
-        persName <- many parseCfPersName
-        persName_Pers <- many parseCfPersName_Pers
-        pers_ResPubl <- many parseCfPers_ResPubl
-        orgUnit <- many parseCfOrgUnit
-        orgUnitName <- many parseCfOrgUnitName
-        return
-                $ CerifRecord
-                        resPubl
-                        resPublTitle
-                        resPublAbstr
-                        resPublKeyw
-                        resPubl_Class
-                        pers
-                        persName
-                        persName_Pers
-                        pers_ResPubl
-                        orgUnit
-                        orgUnitName
+parseCfResPubl :: C.Cursor -> [CfResPubl]
+parseCfResPubl c = do
+        let publId = c $/ C.element (cerifnsName "cfResPublId") &/ C.content
+        let publDate = c $/ C.element (cerifnsName "cfResPublDate") &/ C.content
+        [CfResPubl (publId !! 0) (publDate !! 0)]
 
-parseCfResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl)
-parseCfResPubl = tagNoAttr (matchCNN "cfResPubl") $ do
-        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
-        publDate <- force "publDate missing" $ tagNoAttr (matchCNN "cfResPublDate") content
-        return
-                $ CfResPubl
-                        publId
-                        publDate
+parseCfResPublTitle :: C.Cursor -> [CfResPublTitle]
+parseCfResPublTitle c = do
+        let publId = c $/ C.element (cerifnsName "cfResPublId") &/ C.content
+        let t = c $// C.element (cerifnsName "cfTitle")
+        let langCode = C.attribute "cfLangCode" (t !! 0)
+        let trans = C.attribute "cfTrans" (t !! 0)
+        let t0 = C.child $ t !! 0
+        let title = C.content $ t0 !! 0
+        [CfResPublTitle (publId !! 0) (langCode !! 0) (trans !! 0) (title !! 0)]
 
-parseCfResPublTitle :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPublTitle)
-parseCfResPublTitle = tagNoAttr (matchCNN "cfResPublTitle") $ do
-        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
-        force "title missing" $ tag' (matchCNN "cfTitle") parseTitleAttr $ \(langCode, trans) -> do
-                title <- content
-                return
-                        $ CfResPublTitle
-                                publId
-                                langCode 
-                                trans
-                                title
-                where
-                        parseTitleAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+parseCfResPublAbstr :: C.Cursor -> [CfResPublAbstr]
+parseCfResPublAbstr c = do
+        let publId = c $/ C.element (cerifnsName "cfResPublId") &/ C.content
+        let a = c $// C.element (cerifnsName "cfAbstr")
+        let langCode = C.attribute "cfLangCode" (a !! 0)
+        let trans = C.attribute "cfTrans" (a !! 0)
+        let a0 = C.child $ a !! 0
+        let abstr = C.content $ a0 !! 0
+        [CfResPublAbstr (publId !! 0) (langCode !! 0) (trans !! 0) (abstr !! 0)]
 
-parseCfResPublAbstr :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPublAbstr)
-parseCfResPublAbstr = tagNoAttr (matchCNN "cfResPublAbstr") $ do
-        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
-        force "abstract missing" $ tag' (matchCNN "cfAbstr") parseAbstrAttr $ \(langCode, trans) -> do
-                abstr <- content
-                return
-                        $ CfResPublAbstr
-                                publId
-                                langCode 
-                                trans
-                                abstr
-                where
-                        parseAbstrAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+parseCfResPublKeyw :: C.Cursor -> [CfResPublKeyw]
+parseCfResPublKeyw c = do
+        let publId = c $/ C.element (cerifnsName "cfResPublId") &/ C.content
+        let k = c $// C.element (cerifnsName "cfKeyw")
+        let langCode = C.attribute "cfLangCode" (k !! 0)
+        let trans = C.attribute "cfTrans" (k !! 0)
+        let k0 = C.child $ k !! 0
+        let keyw = C.content $ k0 !! 0
+        [CfResPublKeyw (publId !! 0) (langCode !! 0) (trans !! 0) (keyw !! 0)]
 
-parseCfResPublKeyw :: MonadThrow m => ConduitT X.Event o m (Maybe CfResPublKeyw)
-parseCfResPublKeyw = tagNoAttr (matchCNN "cfResPublKeyw") $ do
-        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
-        force "keywords missing" $ tag' (matchCNN "cfKeyw") parseKeywAttr $ \(langCode, trans) -> do
-                keyw <- content
-                return
-                        $ CfResPublKeyw
-                                publId
-                                langCode 
-                                trans
-                                keyw
-                where
-                        parseKeywAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+parseCfResPubl_Class :: C.Cursor -> [CfResPubl_Class]
+parseCfResPubl_Class c = do
+        let publId = c $/ C.element (cerifnsName "cfResPublId") &/ C.content
+        let classId = c $/ C.element (cerifnsName "cfClassId") &/ C.content
+        let classSchemeId = c $/ C.element (cerifnsName "cfClassSchemeId") &/ C.content
+        let startDate = c $/ C.element (cerifnsName "cfStartDate") &/ C.content
+        let endDate = c $/ C.element (cerifnsName "cfEndDate") &/ C.content
+        [CfResPubl_Class (publId !! 0) (classId !! 0) (classSchemeId !! 0) (startDate !! 0) (endDate !! 0)]
 
-parseCfResPubl_Class:: MonadThrow m => ConduitT X.Event o m (Maybe CfResPubl_Class )
-parseCfResPubl_Class = tagNoAttr (matchCNN "cfResPubl_Class") $ do
-        publId <- force "publId missing" $ tagNoAttr (matchCNN "cfResPublId") content
-        classId <- force "classId missing" $ tagNoAttr (matchCNN "cfClassId") content
-        classSchemeId <- force "classSchemeId missing" $ tagNoAttr (matchCNN "cfClassSchemeId") content
-        startDate <- force "startDate missing" $ tagNoAttr (matchCNN "cfStartDate") content
-        endDate <- force "endDate missing" $ tagNoAttr (matchCNN "cfEndDate") content
-        return
-                $ CfResPubl_Class
-                        publId
-                        classId
-                        classSchemeId
-                        startDate
-                        endDate
+parseCfPers :: C.Cursor -> [CfPers]
+parseCfPers c = do
+        let persId = c $/ C.element (cerifnsName "cfPersId") &/ C.content
+        [CfPers (persId !! 0)]
 
-parseCfPers :: MonadThrow m => ConduitT X.Event o m (Maybe CfPers)
-parseCfPers = tagNoAttr (matchCNN "cfPers") $ do
-        persId <- force "persId missing" $ tagNoAttr (matchCNN "cfPersId") content
-        return
-                $ CfPers
-                        persId
+parseCfPersName :: C.Cursor -> [CfPersName]
+parseCfPersName c = do
+        let persNameId = c $/ C.element (cerifnsName "cfPersNameId") &/ C.content
+        let familyNames = c $/ C.element (cerifnsName "cfFamilyNames") &/ C.content
+        let firstNames = c $/ C.element (cerifnsName "cfFirstNames") &/ C.content
+        [CfPersName (persNameId !! 0) (familyNames !! 0) (firstNames !!0)]
 
-parseCfPersName :: MonadThrow m => ConduitT X.Event o m (Maybe CfPersName)
-parseCfPersName = tagNoAttr (matchCNN "cfPersName") $ do
-        persNameId <- force "persNameId missing" $ tagNoAttr (matchCNN "cfPersNameId") content
-        familyNames <- force "familyNames missing" $ tagNoAttr (matchCNN "cfFamilyNames") content
-        firstNames <- force "firstNames missing" $ tagNoAttr (matchCNN "cfFirstNames") content
-        return
-                $ CfPersName
-                        persNameId
-                        familyNames
-                        firstNames
+parseCfPersName_Pers :: C.Cursor -> [CfPersName_Pers]
+parseCfPersName_Pers c = do
+        let persNameId = c $/ C.element (cerifnsName "cfPersNameId") &/ C.content
+        let persId = c $/ C.element (cerifnsName "cfPersId") &/ C.content
+        let classId = c $/ C.element (cerifnsName "cfClassId") &/ C.content
+        let classSchemeId = c $/ C.element (cerifnsName "cfClassSchemeId") &/ C.content
+        let startDate = c $/ C.element (cerifnsName "cfStartDate") &/ C.content
+        let endDate = c $/ C.element (cerifnsName "cfEndDate") &/ C.content
+        [CfPersName_Pers (persNameId !! 0) (persId !! 0) (classId !! 0) (classSchemeId !! 0) (startDate !! 0) (endDate !! 0)]
 
-parseCfPersName_Pers :: MonadThrow m => ConduitT X.Event o m (Maybe CfPersName_Pers)
-parseCfPersName_Pers = tagNoAttr (matchCNN "cfPersName_Pers") $ do
-        persNameId <- force "persNameId missing" $ tagNoAttr (matchCNN "cfPersNameId") content
-        persId <- force "persId missing" $ tagNoAttr (matchCNN "cfPersId") content
-        classId <- force "classId missing" $ tagNoAttr (matchCNN "cfClassId") content
-        classSchemeId <- force "classSchemeId missing" $ tagNoAttr (matchCNN "cfClassSchemeId") content
-        startDate <- force "startDate missing" $ tagNoAttr (matchCNN "cfStartDate") content
-        endDate <- force "endDate missing" $ tagNoAttr (matchCNN "cfEndDate") content
-        return
-                $ CfPersName_Pers
-                        persNameId
-                        persId
-                        classId
-                        classSchemeId
-                        startDate
-                        endDate
+parseCfPers_ResPubl :: C.Cursor -> [CfPers_ResPubl]
+parseCfPers_ResPubl c = do
+        let persId = c $/ C.element (cerifnsName "cfPersId") &/ C.content
+        let publId = c $/ C.element (cerifnsName "cfResPublId") &/ C.content
+        let classId = c $/ C.element (cerifnsName "cfClassId") &/ C.content
+        let classSchemeId = c $/ C.element (cerifnsName "cfClassSchemeId") &/ C.content
+        let startDate = c $/ C.element (cerifnsName "cfStartDate") &/ C.content
+        let endDate = c $/ C.element (cerifnsName "cfEndDate") &/ C.content
+        [CfPers_ResPubl (persId !! 0) (publId !! 0) (classId !! 0) (classSchemeId !! 0) (startDate !! 0) (endDate !! 0)]
 
-parseCfPers_ResPubl :: MonadThrow m => ConduitT X.Event o m (Maybe CfPers_ResPubl)
-parseCfPers_ResPubl = tagNoAttr (matchCNN "cfPers_ResPubl") $ do
-        persId <- force "persId missing" $ tagNoAttr (matchCNN "cfPersId") content
-        resPublId <- force "resPublId missing" $ tagNoAttr (matchCNN "cfResPublId") content
-        classId <- force "classId missing" $ tagNoAttr (matchCNN "cfClassId") content
-        classSchemeId <- force "classSchemeId missing" $ tagNoAttr (matchCNN "cfClassSchemeId") content
-        startDate <- force "startDate missing" $ tagNoAttr (matchCNN "cfStartDate") content
-        endDate <- force "endDate missing" $ tagNoAttr (matchCNN "cfEndDate") content
-        return
-                $ CfPers_ResPubl
-                        persId
-                        resPublId
-                        classId
-                        classSchemeId
-                        startDate
-                        endDate
+parseCfOrgUnit :: C.Cursor -> [CfOrgUnit]
+parseCfOrgUnit c = do
+        let orgUnitId = c $/ C.element (cerifnsName "cfOrgUnitId") &/ C.content
+        [CfOrgUnit (orgUnitId !! 0)]
 
-parseCfOrgUnit :: MonadThrow m => ConduitT X.Event o m (Maybe CfOrgUnit)
-parseCfOrgUnit = tagNoAttr (matchCNN "cfOrgUnit") $ do
-        orgUnitId <- force "orgUnitId missing" $ tagNoAttr (matchCNN "cfOrgUnitId") content
-        return
-                $ CfOrgUnit
-                        orgUnitId
-
-parseCfOrgUnitName :: MonadThrow m => ConduitT X.Event o m (Maybe CfOrgUnitName)
-parseCfOrgUnitName = tagNoAttr (matchCNN "cfOrgUnitName") $ do
-        orgUnitId <- force "orgUnitId missing" $ tagNoAttr (matchCNN "cfOrgUnitId") content
-        force "name missing" $ tag' (matchCNN "cfName") parseNameAttr $ \(langCode, trans) -> do
-                name <- content
-                return
-                        $ CfOrgUnitName
-                                orgUnitId
-                                langCode 
-                                trans
-                                name
-                where
-                        parseNameAttr = (,) <$> requireAttr "cfLangCode" <*> requireAttr "cfTrans" <* ignoreAttrs
+parseCfOrgUnitName :: C.Cursor -> [CfOrgUnitName]
+parseCfOrgUnitName c = do
+        let orgUnitId = c $/ C.element (cerifnsName "cfOrgUnitId") &/ C.content
+        let n = c $// C.element (cerifnsName "cfName")
+        let langCode = C.attribute "cfLangCode" (n !! 0)
+        let trans = C.attribute "cfTrans" (n !! 0)
+        let n0 = C.child $ n !! 0
+        let name = C.content $ n0 !! 0
+        [CfOrgUnitName (orgUnitId !! 0) (langCode !! 0) (trans !! 0) (name !! 0)]

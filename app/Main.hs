@@ -57,7 +57,8 @@ biblput "swepubjson" t = do
         cerifout (SW.toCfResPubl <$> biblrec) t
 biblput "cerifxml" t = do
         cerifinRaw <- L.getContents
-        cerif <- runConduitRes $ XP.parseLBS XP.def cerifinRaw .| XP.force "CERIF missing" parseCerifRecord
+        let cerifin =  parseLBS_ def cerifinRaw
+        let cerif = parseCerifRecord (C.fromDocument cerifin)
         cerifout [cerif] t
 biblput "modsxml" t = do
         modsinRaw <- L.getContents
